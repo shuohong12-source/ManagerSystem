@@ -32,7 +32,7 @@
                 <td th:text="${row.month_value}">月份</td>
                 <td th:text="${row.destination_region}">区域</td>
                 <td th:text="${row.destination_city}">城市</td>
-                <td th:text="${row.status}">状态</td>
+                <td><span class="status-badge" th:attr="data-status=${row.status}" th:text="${row.status}">状态</span></td>
                 <td th:text="${row.waybill_count}">0</td>
                 <td th:text="${row.goods_quantity}">0</td>
                 <td th:text="${row.freight_amount}">0</td>

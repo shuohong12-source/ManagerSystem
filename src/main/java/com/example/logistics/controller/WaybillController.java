@@ -44,6 +44,42 @@ public class WaybillController {
         return "waybill-form";
     }
 
+    @GetMapping("/waybills/{id}/edit")
+    public String editPage(@PathVariable Long id, Model model) {
+        model.addAttribute("waybill", waybillService.waybill(id));
+        model.addAttribute("cities", waybillService.cities());
+        return "waybill-edit";
+    }
+
+    @PostMapping("/waybills/{id}/edit")
+    public String updateWaybill(@PathVariable Long id,
+                                @RequestParam String priority,
+                                @RequestParam String clerk,
+                                @RequestParam Long destinationCityId,
+                                @RequestParam(required = false) String remark,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            waybillService.updateWaybill(id, priority, clerk, destinationCityId, remark);
+            redirectAttributes.addFlashAttribute("success", "运单已更新");
+            return "redirect:/waybills";
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("error", "运单更新失败：" + ex.getMessage());
+            return "redirect:/waybills/" + id + "/edit";
+        }
+    }
+
+    @PostMapping("/waybills/{id}/delete")
+    public String deleteWaybill(@PathVariable Long id,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            waybillService.deleteWaybill(id);
+            redirectAttributes.addFlashAttribute("success", "运单已删除");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("error", "运单删除失败：" + ex.getMessage());
+        }
+        return "redirect:/waybills";
+    }
+
     @PostMapping("/waybills")
     public String create(@RequestParam String priority,
                          @RequestParam String clerk,

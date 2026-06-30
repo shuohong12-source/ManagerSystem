@@ -45,6 +45,14 @@
         ORDER BY w.waybillid ASC
     </select>
 
+    <select id="selectWaybill" resultType="map">
+        SELECT w.*, c.name AS destination_city, r.name AS destination_region
+        FROM waybill w
+        JOIN city c ON c.cityid = w.destination_cityid
+        JOIN hub_region r ON r.regionid = c.regionid
+        WHERE w.waybillid = #{waybillId}
+    </select>
+
     <select id="selectItems" resultType="map">
         SELECT i.*, g.name AS goods_name, wh.name AS warehouse_name
         FROM waybill_item i
@@ -123,6 +131,30 @@
         UPDATE waybill SET total_freight = #{totalFreight} WHERE waybillid = #{waybillId}
     </update>
 
+    <update id="updateWaybillHeader">
+        UPDATE waybill
+        SET priority = #{priority},
+            clerk = #{clerk},
+            destination_cityid = #{destinationCityId},
+            remark = #{remark}
+        WHERE waybillid = #{waybillId}
+    </update>
+
+    <update id="updateItemFreightsForPriority">
+        UPDATE waybill_item i
+        JOIN goods g ON g.goodsid = i.goodsid
+        SET i.base_freight = ROUND(g.declared_price * i.quantity * 0.08, 2),
+            i.premium_rate = #{premiumRate},
+            i.tax = #{tax},
+            i.line_freight = ROUND(
+                (g.declared_price * i.quantity * 0.08)
+                + (g.declared_price * i.quantity * 0.08 * #{premiumRate})
+                + (g.declared_price * i.quantity * #{tax}),
+                2
+            )
+        WHERE i.waybillid = #{waybillId}
+    </update>
+
     <select id="selectStatus" resultType="string">
         SELECT status FROM waybill WHERE waybillid = #{waybillId}
     </select>
@@ -142,4 +174,12 @@
     <update id="updateStatus">
         UPDATE waybill SET status = #{status} WHERE waybillid = #{waybillId}
     </update>
+
+    <delete id="deleteStockTxnsByWaybill">
+        DELETE FROM stock_txn WHERE waybillid = #{waybillId}
+    </delete>
+
+    <delete id="deleteWaybill">
+        DELETE FROM waybill WHERE waybillid = #{waybillId}
+    </delete>
 </mapper>

@@ -51,6 +51,14 @@ public class WaybillService {
         );
     }
 
+    public Map<String, Object> waybill(Long waybillId) {
+        Map<String, Object> waybill = waybillMapper.selectWaybill(waybillId);
+        if (waybill == null || waybill.isEmpty()) {
+            throw new IllegalArgumentException("运单不存在: " + waybillId);
+        }
+        return waybill;
+    }
+
     public List<Map<String, Object>> items(Long waybillId) {
         return waybillMapper.selectItems(waybillId);
     }
@@ -126,6 +134,45 @@ public class WaybillService {
             }
         }
         waybillMapper.updateStatus(waybillId, targetStatus);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
+    public void updateWaybill(Long waybillId, String priority, String clerk, Long destinationCityId, String remark) {
+        waybill(waybillId);
+        if (!StringUtils.hasText(priority) || !StringUtils.hasText(clerk) || destinationCityId == null) {
+            throw new IllegalArgumentException("优先级、跟单员和目的地不能为空");
+        }
+        int updated = waybillMapper.updateWaybillHeader(waybillId, priority, clerk.trim(), destinationCityId,
+                StringUtils.hasText(remark) ? remark.trim() : null);
+        if (updated != 1) {
+            throw new IllegalStateException("运单不存在或已被删除");
+        }
+        waybillMapper.updateItemFreightsForPriority(waybillId, premiumRate(priority), TAX_RATE);
+        refreshWaybillFreight(waybillId);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
+    public void deleteWaybill(Long waybillId) {
+        String current = waybillMapper.selectStatus(waybillId);
+        if (current == null) {
+            throw new IllegalArgumentException("运单不存在: " + waybillId);
+        }
+        List<Map<String, Object>> rows = items(waybillId);
+        if (!"已取消".equals(current) && !"已签收".equals(current)) {
+            for (Map<String, Object> item : rows) {
+                int quantity = intValue(item.get("quantity"));
+                int released = waybillMapper.releaseInventory(item.get("whid"), item.get("goodsid"), quantity);
+                if (released == 1) {
+                    waybillMapper.insertStockTxn(item.get("whid"), item.get("goodsid"), waybillId, quantity,
+                            "取消释放", null, "删除运单释放冻结库存");
+                }
+            }
+        }
+        waybillMapper.deleteStockTxnsByWaybill(waybillId);
+        int deleted = waybillMapper.deleteWaybill(waybillId);
+        if (deleted != 1) {
+            throw new IllegalStateException("运单不存在或已被删除");
+        }
     }
 
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)

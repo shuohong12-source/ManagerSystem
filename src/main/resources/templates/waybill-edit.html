@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>编辑运单</title>
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">智慧跨境物流供应链管理系统</div>
+    <nav class="nav">
+        <a href="/">BI看板</a>
+        <a href="/master/regions">基础数据</a>
+        <a href="/waybills">运单管理</a>
+        <a href="/recommendations">仓库推荐</a>
+        <a href="/reports/monthly">月度对账</a>
+    </nav>
+</header>
+<main class="container">
+    <div class="page-heading">
+        <div>
+            <h1 class="page-title" th:text="'编辑运单 #' + ${waybill.waybillid}">编辑运单</h1>
+            <p class="page-subtitle">修改基础信息后会按优先级重新计算运单费用</p>
+        </div>
+        <a class="button secondary" th:href="@{'/waybills/' + ${waybill.waybillid} + '/items'}">修改运单项</a>
+    </div>
+    <div th:if="${error}" class="message error" th:text="${error}"></div>
+
+    <form class="panel" th:action="@{'/waybills/' + ${waybill.waybillid} + '/edit'}" method="post">
+        <div class="form-grid">
+            <label><span>当前状态</span>
+                <input th:value="${waybill.status}" readonly>
+            </label>
+            <label><span>运输优先级</span>
+                <select name="priority" required>
+                    <option value="普通" th:selected="${waybill.priority == '普通'}">普通</option>
+                    <option value="加急" th:selected="${waybill.priority == '加急'}">加急</option>
+                    <option value="特急" th:selected="${waybill.priority == '特急'}">特急</option>
+                </select>
+            </label>
+            <label><span>跟单员</span>
+                <input name="clerk" th:value="${waybill.clerk}" required>
+            </label>
+            <label><span>目的地城市</span>
+                <select name="destinationCityId" required>
+                    <option th:each="c : ${cities}" th:value="${c.cityid}" th:text="${c.name}" th:selected="${waybill.destination_cityid != null and waybill.destination_cityid.toString() == c.cityid.toString()}">城市</option>
+                </select>
+            </label>
+            <label><span>当前运费</span>
+                <input th:value="${waybill.total_freight}" readonly>
+            </label>
+            <label><span>创建日期</span>
+                <input th:value="${#temporals.format(waybill.create_date, 'yyyy-MM-dd HH:mm')}" readonly>
+            </label>
+            <label class="form-wide"><span>备注</span>
+                <textarea name="remark" rows="3" th:text="${waybill.remark}"></textarea>
+            </label>
+        </div>
+        <div class="actions" style="margin-top:14px">
+            <button type="submit">保存</button>
+            <a class="button secondary" href="/waybills">返回</a>
+        </div>
+    </form>
+</main>
+</body>
+</html>

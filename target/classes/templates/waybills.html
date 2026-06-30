@@ -58,6 +58,7 @@
                 <td>
                     <div class="actions">
                         <a class="button secondary" th:href="@{'/waybills/' + ${w.waybillid} + '/items'}">明细</a>
+                        <a class="button secondary" th:href="@{'/waybills/' + ${w.waybillid} + '/edit'}">编辑</a>
                         <form th:action="@{'/waybills/' + ${w.waybillid} + '/status'}" method="post">
                             <select name="status">
                                 <option value="待发运" th:selected="${w.status == '待发运'}">待发运</option>
@@ -66,6 +67,9 @@
                                 <option value="已取消" th:selected="${w.status == '已取消'}">已取消</option>
                             </select>
                             <button type="submit">改状态</button>
+                        </form>
+                        <form th:action="@{'/waybills/' + ${w.waybillid} + '/delete'}" method="post" onsubmit="return confirm('确认删除该运单？关联明细和库存流水也会同步处理。')">
+                            <button class="danger" type="submit">删除</button>
                         </form>
                     </div>
                 </td>

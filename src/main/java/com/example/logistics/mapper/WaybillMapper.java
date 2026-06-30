@@ -21,6 +21,8 @@ public interface WaybillMapper {
                                      @Param("start") LocalDateTime start,
                                      @Param("end") LocalDateTime end);
 
+    Map<String, Object> selectWaybill(@Param("waybillId") Long waybillId);
+
     List<Map<String, Object>> selectItems(@Param("waybillId") Long waybillId);
 
     Map<String, Object> selectItem(@Param("waybillId") Long waybillId,
@@ -73,6 +75,16 @@ public interface WaybillMapper {
     int updateWaybillFreight(@Param("waybillId") Long waybillId,
                              @Param("totalFreight") BigDecimal totalFreight);
 
+    int updateWaybillHeader(@Param("waybillId") Long waybillId,
+                            @Param("priority") String priority,
+                            @Param("clerk") String clerk,
+                            @Param("destinationCityId") Long destinationCityId,
+                            @Param("remark") String remark);
+
+    int updateItemFreightsForPriority(@Param("waybillId") Long waybillId,
+                                      @Param("premiumRate") BigDecimal premiumRate,
+                                      @Param("tax") BigDecimal tax);
+
     String selectStatus(@Param("waybillId") Long waybillId);
 
     int releaseInventory(@Param("whId") Object whId,
@@ -85,4 +97,8 @@ public interface WaybillMapper {
 
     int updateStatus(@Param("waybillId") Long waybillId,
                      @Param("status") String status);
+
+    int deleteStockTxnsByWaybill(@Param("waybillId") Long waybillId);
+
+    int deleteWaybill(@Param("waybillId") Long waybillId);
 }
