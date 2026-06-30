@@ -23,6 +23,15 @@ public interface WaybillMapper {
 
     List<Map<String, Object>> selectItems(@Param("waybillId") Long waybillId);
 
+    Map<String, Object> selectItem(@Param("waybillId") Long waybillId,
+                                   @Param("itemId") Long itemId);
+
+    String selectPriority(@Param("waybillId") Long waybillId);
+
+    int countItems(@Param("waybillId") Long waybillId);
+
+    BigDecimal sumItemFreight(@Param("waybillId") Long waybillId);
+
     int insertWaybill(Map<String, Object> waybill);
 
     BigDecimal selectDeclaredPrice(@Param("goodsId") Long goodsId);
@@ -39,6 +48,19 @@ public interface WaybillMapper {
                           @Param("premiumRate") BigDecimal premiumRate,
                           @Param("tax") BigDecimal tax,
                           @Param("lineFreight") BigDecimal lineFreight);
+
+    int updateWaybillItem(@Param("waybillId") Long waybillId,
+                          @Param("itemId") Long itemId,
+                          @Param("goodsId") Long goodsId,
+                          @Param("whId") Long whId,
+                          @Param("quantity") Integer quantity,
+                          @Param("baseFreight") BigDecimal baseFreight,
+                          @Param("premiumRate") BigDecimal premiumRate,
+                          @Param("tax") BigDecimal tax,
+                          @Param("lineFreight") BigDecimal lineFreight);
+
+    int deleteWaybillItem(@Param("waybillId") Long waybillId,
+                          @Param("itemId") Long itemId);
 
     int insertStockTxn(@Param("whId") Object whId,
                        @Param("goodsId") Object goodsId,

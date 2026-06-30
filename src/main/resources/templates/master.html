@@ -56,8 +56,8 @@
     <section class="panel" style="margin-top:16px">
         <form class="toolbar" method="get">
             <label>
-                <span>名称搜索</span>
-                <input type="text" name="q" th:value="${q}" placeholder="输入名称关键字">
+                <span th:text="${definition.type == 'inventory' ? '商品名称搜索' : '名称搜索'}">名称搜索</span>
+                <input type="text" name="q" th:value="${q}" th:placeholder="${definition.type == 'inventory' ? '输入商品名称关键字' : '输入名称关键字'}">
             </label>
             <button type="submit">查询</button>
         </form>

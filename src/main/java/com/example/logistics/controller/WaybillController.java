@@ -65,9 +65,43 @@ public class WaybillController {
 
     @GetMapping("/waybills/{id}/items")
     public String items(@PathVariable Long id, Model model) {
+        String status = waybillService.status(id);
         model.addAttribute("items", waybillService.items(id));
         model.addAttribute("waybillId", id);
+        model.addAttribute("goods", waybillService.goods());
+        model.addAttribute("warehouses", waybillService.warehouses());
+        model.addAttribute("status", status);
+        model.addAttribute("canEditItems", !"已取消".equals(status) && !"已签收".equals(status));
         return "waybill-items";
+    }
+
+    @PostMapping("/waybills/{id}/items/{itemId}/update")
+    public String updateItem(@PathVariable Long id,
+                             @PathVariable Long itemId,
+                             @RequestParam Long goodsId,
+                             @RequestParam Long whId,
+                             @RequestParam Integer quantity,
+                             RedirectAttributes redirectAttributes) {
+        try {
+            waybillService.updateItem(id, itemId, goodsId, whId, quantity);
+            redirectAttributes.addFlashAttribute("success", "运单项已更新");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("error", "运单项更新失败：" + ex.getMessage());
+        }
+        return "redirect:/waybills/" + id + "/items";
+    }
+
+    @PostMapping("/waybills/{id}/items/{itemId}/delete")
+    public String deleteItem(@PathVariable Long id,
+                             @PathVariable Long itemId,
+                             RedirectAttributes redirectAttributes) {
+        try {
+            waybillService.deleteItem(id, itemId);
+            redirectAttributes.addFlashAttribute("success", "运单项已删除");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("error", "运单项删除失败：" + ex.getMessage());
+        }
+        return "redirect:/waybills/" + id + "/items";
     }
 
     @PostMapping("/waybills/{id}/status")

@@ -55,6 +55,10 @@ public class WaybillService {
         return waybillMapper.selectItems(waybillId);
     }
 
+    public String status(Long waybillId) {
+        return waybillMapper.selectStatus(waybillId);
+    }
+
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public Long create(String priority, String clerk, Long destinationCityId, String remark,
                        List<Long> goodsIds, List<Long> warehouseIds, List<Integer> quantities) {
@@ -124,6 +128,61 @@ public class WaybillService {
         waybillMapper.updateStatus(waybillId, targetStatus);
     }
 
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
+    public void updateItem(Long waybillId, Long itemId, Long goodsId, Long whId, Integer quantity) {
+        ensureEditable(waybillId);
+        if (goodsId == null || whId == null || quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("运单项商品、仓库和数量不能为空，数量必须大于 0");
+        }
+        Map<String, Object> oldItem = item(waybillId, itemId);
+        Long oldWhId = longValue(oldItem.get("whid"));
+        Long oldGoodsId = longValue(oldItem.get("goodsid"));
+        int oldQuantity = intValue(oldItem.get("quantity"));
+
+        int released = waybillMapper.releaseInventory(oldWhId, oldGoodsId, oldQuantity);
+        int frozen = waybillMapper.freezeInventory(whId, goodsId, quantity);
+        if (frozen != 1) {
+            throw new IllegalStateException("新商品或仓库库存不足，无法冻结 " + quantity + " 件");
+        }
+
+        BigDecimal premiumRate = premiumRate(waybillMapper.selectPriority(waybillId));
+        Freight freight = freight(declaredPrice(goodsId), quantity, premiumRate);
+        int updated = waybillMapper.updateWaybillItem(waybillId, itemId, goodsId, whId, quantity,
+                freight.baseFreight(), premiumRate, TAX_RATE, freight.lineFreight());
+        if (updated != 1) {
+            throw new IllegalStateException("运单项不存在或已被删除");
+        }
+        if (released == 1) {
+            waybillMapper.insertStockTxn(oldWhId, oldGoodsId, waybillId, oldQuantity,
+                    "取消释放", null, "修改运单项释放原冻结库存");
+        }
+        waybillMapper.insertStockTxn(whId, goodsId, waybillId, -quantity,
+                "出库冻结", null, "修改运单项重新冻结库存");
+        refreshWaybillFreight(waybillId);
+    }
+
+    @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
+    public void deleteItem(Long waybillId, Long itemId) {
+        ensureEditable(waybillId);
+        if (waybillMapper.countItems(waybillId) <= 1) {
+            throw new IllegalStateException("运单至少需要保留一条明细");
+        }
+        Map<String, Object> oldItem = item(waybillId, itemId);
+        Long oldWhId = longValue(oldItem.get("whid"));
+        Long oldGoodsId = longValue(oldItem.get("goodsid"));
+        int oldQuantity = intValue(oldItem.get("quantity"));
+        int released = waybillMapper.releaseInventory(oldWhId, oldGoodsId, oldQuantity);
+        int deleted = waybillMapper.deleteWaybillItem(waybillId, itemId);
+        if (deleted != 1) {
+            throw new IllegalStateException("运单项不存在或已被删除");
+        }
+        if (released == 1) {
+            waybillMapper.insertStockTxn(oldWhId, oldGoodsId, waybillId, oldQuantity,
+                    "取消释放", null, "删除运单项释放冻结库存");
+        }
+        refreshWaybillFreight(waybillId);
+    }
+
     private BigDecimal declaredPrice(Long goodsId) {
         BigDecimal declaredPrice = waybillMapper.selectDeclaredPrice(goodsId);
         if (declaredPrice == null) {
@@ -147,6 +206,36 @@ public class WaybillService {
         BigDecimal tax = amount.multiply(TAX_RATE);
         BigDecimal line = base.add(premium).add(tax).setScale(2, RoundingMode.HALF_UP);
         return new Freight(base, line);
+    }
+
+    private void ensureEditable(Long waybillId) {
+        String current = waybillMapper.selectStatus(waybillId);
+        if (current == null) {
+            throw new IllegalArgumentException("运单不存在: " + waybillId);
+        }
+        if ("已取消".equals(current) || "已签收".equals(current)) {
+            throw new IllegalStateException("已取消或已签收的运单不能修改明细");
+        }
+    }
+
+    private Map<String, Object> item(Long waybillId, Long itemId) {
+        Map<String, Object> item = waybillMapper.selectItem(waybillId, itemId);
+        if (item == null || item.isEmpty()) {
+            throw new IllegalArgumentException("运单项不存在: " + itemId);
+        }
+        return item;
+    }
+
+    private void refreshWaybillFreight(Long waybillId) {
+        waybillMapper.updateWaybillFreight(waybillId, waybillMapper.sumItemFreight(waybillId));
+    }
+
+    private Long longValue(Object value) {
+        return ((Number) value).longValue();
+    }
+
+    private int intValue(Object value) {
+        return ((Number) value).intValue();
     }
 
     private record Freight(BigDecimal baseFreight, BigDecimal lineFreight) {

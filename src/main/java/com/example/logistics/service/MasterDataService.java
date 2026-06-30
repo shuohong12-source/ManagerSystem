@@ -73,6 +73,10 @@ public class MasterDataService {
     }
 
     public List<Map<String, Object>> findAll(MasterDefinition definition, String keyword) {
+        if ("inventory".equals(definition.type())) {
+            String effectiveKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
+            return masterDataMapper.findInventoryByGoodsName(effectiveKeyword);
+        }
         String effectiveKeyword = StringUtils.hasText(keyword) && hasColumn(definition, "name") ? keyword.trim() : null;
         return masterDataMapper.findAll(definition.tableName(), effectiveKeyword, definition.idColumns().get(0));
     }

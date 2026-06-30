@@ -42,7 +42,7 @@
             </if>
         </where>
         GROUP BY w.waybillid, w.status, w.total_freight, w.create_date, w.priority, w.clerk, c.name, r.name
-        ORDER BY w.create_date DESC
+        ORDER BY w.waybillid ASC
     </select>
 
     <select id="selectItems" resultType="map">
@@ -52,6 +52,27 @@
         JOIN warehouse wh ON wh.whid = i.whid
         WHERE i.waybillid = #{waybillId}
         ORDER BY i.itemid
+    </select>
+
+    <select id="selectItem" resultType="map">
+        SELECT i.*
+        FROM waybill_item i
+        WHERE i.waybillid = #{waybillId}
+          AND i.itemid = #{itemId}
+    </select>
+
+    <select id="selectPriority" resultType="string">
+        SELECT priority FROM waybill WHERE waybillid = #{waybillId}
+    </select>
+
+    <select id="countItems" resultType="int">
+        SELECT COUNT(*) FROM waybill_item WHERE waybillid = #{waybillId}
+    </select>
+
+    <select id="sumItemFreight" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(line_freight), 0)
+        FROM waybill_item
+        WHERE waybillid = #{waybillId}
     </select>
 
     <insert id="insertWaybill" parameterType="map" useGeneratedKeys="true" keyProperty="waybillid">
@@ -73,6 +94,25 @@
         INSERT INTO waybill_item(waybillid, goodsid, whid, quantity, base_freight, premium_rate, tax, line_freight)
         VALUES(#{waybillId}, #{goodsId}, #{whId}, #{quantity}, #{baseFreight}, #{premiumRate}, #{tax}, #{lineFreight})
     </insert>
+
+    <update id="updateWaybillItem">
+        UPDATE waybill_item
+        SET goodsid = #{goodsId},
+            whid = #{whId},
+            quantity = #{quantity},
+            base_freight = #{baseFreight},
+            premium_rate = #{premiumRate},
+            tax = #{tax},
+            line_freight = #{lineFreight}
+        WHERE waybillid = #{waybillId}
+          AND itemid = #{itemId}
+    </update>
+
+    <delete id="deleteWaybillItem">
+        DELETE FROM waybill_item
+        WHERE waybillid = #{waybillId}
+          AND itemid = #{itemId}
+    </delete>
 
     <insert id="insertStockTxn">
         INSERT INTO stock_txn(whid, goodsid, waybillid, change_quantity, txn_type, operator_name, remark)

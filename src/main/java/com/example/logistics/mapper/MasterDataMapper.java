@@ -11,6 +11,8 @@ public interface MasterDataMapper {
                                       @Param("keyword") String keyword,
                                       @Param("orderColumn") String orderColumn);
 
+    List<Map<String, Object>> findInventoryByGoodsName(@Param("keyword") String keyword);
+
     List<Map<String, Object>> findById(@Param("tableName") String tableName,
                                        @Param("conditions") List<Map<String, Object>> conditions);
 

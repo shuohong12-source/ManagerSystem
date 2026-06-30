@@ -48,10 +48,10 @@
             <tbody>
             <tr th:each="w : ${waybills}">
                 <td th:text="${w.waybillid}">1</td>
-                <td th:text="${w.status}">状态</td>
+                <td><span class="status-badge" th:attr="data-status=${w.status}" th:text="${w.status}">状态</span></td>
                 <td th:text="${w.total_freight}">0</td>
                 <td th:text="${#temporals.format(w.create_date, 'yyyy-MM-dd HH:mm')}">日期</td>
-                <td th:text="${w.priority}">普通</td>
+                <td><span class="priority-badge" th:attr="data-priority=${w.priority}" th:text="${w.priority}">普通</span></td>
                 <td th:text="${w.clerk}">张三</td>
                 <td th:text="${w.destination_region + ' / ' + w.destination_city}">城市</td>
                 <td th:text="${w.item_quantity}">0</td>
@@ -60,7 +60,10 @@
                         <a class="button secondary" th:href="@{'/waybills/' + ${w.waybillid} + '/items'}">明细</a>
                         <form th:action="@{'/waybills/' + ${w.waybillid} + '/status'}" method="post">
                             <select name="status">
-                                <option>待发运</option><option>运输中</option><option>已签收</option><option>已取消</option>
+                                <option value="待发运" th:selected="${w.status == '待发运'}">待发运</option>
+                                <option value="运输中" th:selected="${w.status == '运输中'}">运输中</option>
+                                <option value="已签收" th:selected="${w.status == '已签收'}">已签收</option>
+                                <option value="已取消" th:selected="${w.status == '已取消'}">已取消</option>
                             </select>
                             <button type="submit">改状态</button>
                         </form>

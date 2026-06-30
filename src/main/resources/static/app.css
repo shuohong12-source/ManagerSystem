@@ -349,6 +349,64 @@ tbody tr:hover {
     background: #f8fbfd;
 }
 
+.status-badge,
+.priority-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 58px;
+    min-height: 28px;
+    padding: 3px 10px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.status-badge[data-status="待发运"] {
+    color: #1d5f8f;
+    border-color: #b9d4e8;
+    background: #eaf4fb;
+}
+
+.status-badge[data-status="运输中"] {
+    color: #0f766e;
+    border-color: #a8d8d1;
+    background: #e8f7f4;
+}
+
+.status-badge[data-status="已签收"] {
+    color: #237047;
+    border-color: #b6dcc5;
+    background: #edf8f1;
+}
+
+.status-badge[data-status="已取消"] {
+    color: #64748b;
+    border-color: #d5dce6;
+    background: #f1f5f9;
+}
+
+.priority-badge[data-priority="普通"] {
+    color: #475569;
+    border-color: #d5dce6;
+    background: #f8fafc;
+}
+
+.priority-badge[data-priority="加急"] {
+    color: #a15c07;
+    border-color: #e8c78d;
+    background: #fff6e6;
+}
+
+.priority-badge[data-priority="特急"] {
+    color: #a7352c;
+    border-color: #ebb0aa;
+    background: #fff0ee;
+}
+
 .message {
     margin-bottom: 16px;
     padding: 11px 13px;
@@ -418,8 +476,11 @@ tbody tr:hover {
     grid-column: span 1;
 }
 
-.goods-panel {
-    grid-column: 1 / -1;
+.chart-split {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 16px;
 }
 
 .panel-head {
@@ -475,10 +536,6 @@ tbody tr:hover {
 
 .chart-canvas.tall {
     min-height: 360px;
-}
-
-.chart-canvas.trend-wide {
-    min-height: 340px;
 }
 
 .chart-canvas svg {
@@ -585,7 +642,7 @@ tbody tr:hover {
 
 .chart-tooltip {
     position: absolute;
-    z-index: 5;
+    z-index: 100;
     min-width: 130px;
     max-width: 240px;
     padding: 9px 10px;
@@ -641,18 +698,36 @@ tbody tr:hover {
     min-width: 96px;
 }
 
+.table-select {
+    width: min(220px, 100%);
+    min-width: 150px;
+}
+
+.number-compact {
+    width: 92px;
+}
+
+.item-actions {
+    flex-wrap: nowrap;
+}
+
 .dashboard .panel {
     padding: 20px;
 }
 
 .chart-panel {
+    position: relative;
+    z-index: 1;
     min-height: 330px;
-    overflow: hidden;
+    overflow: visible;
+}
+
+.chart-panel:hover {
+    z-index: 20;
 }
 
 .trend-panel {
-    margin-top: 16px;
-    min-height: 400px;
+    min-height: 330px;
 }
 
 .chart-legend {
@@ -664,7 +739,7 @@ tbody tr:hover {
 }
 
 @media (max-width: 860px) {
-    .grid, .two-col, .form-grid, .item-card, .metric-grid, .dashboard-grid {
+    .grid, .two-col, .form-grid, .item-card, .metric-grid, .dashboard-grid, .chart-split {
         grid-template-columns: 1fr;
     }
 

@@ -17,23 +17,55 @@
 </header>
 <main class="container">
     <h1 class="page-title" th:text="'运单 #' + ${waybillId} + ' 明细'">运单明细</h1>
+    <div th:if="${success}" class="message success" th:text="${success}"></div>
+    <div th:if="${error}" class="message error" th:text="${error}"></div>
     <section class="panel">
+        <div class="panel-head">
+            <div>
+                <h2>运单项</h2>
+                <p th:if="${canEditItems}">可修改商品、发货仓库和数量，保存后自动重算运费并同步冻结库存</p>
+                <p th:if="${!canEditItems}" th:text="'当前运单状态为' + ${status} + '，不能修改或删除明细'">当前状态不可编辑</p>
+            </div>
+            <a class="button secondary" href="/waybills">返回运单列表</a>
+        </div>
         <table>
-            <thead><tr><th>明细编号</th><th>商品</th><th>仓库</th><th>数量</th><th>基础运费</th><th>加急费率</th><th>税率</th><th>行运费</th></tr></thead>
+            <thead><tr><th>明细编号</th><th>商品</th><th>仓库</th><th>数量</th><th>基础运费</th><th>加急费率</th><th>税率</th><th>行运费</th><th th:if="${canEditItems}">操作</th></tr></thead>
             <tbody>
             <tr th:each="item : ${items}">
                 <td th:text="${item.itemid}">1</td>
-                <td th:text="${item.goods_name}">商品</td>
-                <td th:text="${item.warehouse_name}">仓库</td>
-                <td th:text="${item.quantity}">0</td>
+                <td>
+                    <span th:if="${!canEditItems}" th:text="${item.goods_name}">商品</span>
+                    <select th:if="${canEditItems}" class="table-select" name="goodsId" th:attr="form='item-form-' + ${item.itemid}">
+                        <option th:each="g : ${goods}" th:value="${g.goodsid}" th:text="${g.name}" th:selected="${item.goodsid != null and item.goodsid.toString() == g.goodsid.toString()}">商品</option>
+                    </select>
+                </td>
+                <td>
+                    <span th:if="${!canEditItems}" th:text="${item.warehouse_name}">仓库</span>
+                    <select th:if="${canEditItems}" class="table-select" name="whId" th:attr="form='item-form-' + ${item.itemid}">
+                        <option th:each="w : ${warehouses}" th:value="${w.whid}" th:text="${w.name}" th:selected="${item.whid != null and item.whid.toString() == w.whid.toString()}">仓库</option>
+                    </select>
+                </td>
+                <td>
+                    <span th:if="${!canEditItems}" th:text="${item.quantity}">0</span>
+                    <input th:if="${canEditItems}" class="number-compact" type="number" min="1" name="quantity" th:value="${item.quantity}" th:attr="form='item-form-' + ${item.itemid}">
+                </td>
                 <td th:text="${item.base_freight}">0</td>
                 <td th:text="${item.premium_rate}">0</td>
                 <td th:text="${item.tax}">0</td>
                 <td th:text="${item.line_freight}">0</td>
+                <td th:if="${canEditItems}">
+                    <div class="actions item-actions">
+                        <form th:id="'item-form-' + ${item.itemid}" th:action="@{'/waybills/' + ${waybillId} + '/items/' + ${item.itemid} + '/update'}" method="post"></form>
+                        <button type="submit" th:attr="form='item-form-' + ${item.itemid}">保存</button>
+                        <form th:action="@{'/waybills/' + ${waybillId} + '/items/' + ${item.itemid} + '/delete'}" method="post" onsubmit="return confirm('确认删除该运单项？库存冻结将同步释放。')">
+                            <button class="danger" type="submit">删除</button>
+                        </form>
+                    </div>
+                </td>
             </tr>
+            <tr th:if="${#lists.isEmpty(items)}"><td th:colspan="${canEditItems ? 9 : 8}">暂无运单项</td></tr>
             </tbody>
         </table>
-        <p><a class="button secondary" href="/waybills">返回运单列表</a></p>
     </section>
 </main>
 </body>

@@ -18,6 +18,17 @@
         ORDER BY ${orderColumn} DESC
     </select>
 
+    <select id="findInventoryByGoodsName" resultType="map">
+        SELECT inv.*
+        FROM inventory inv
+        JOIN goods g ON g.goodsid = inv.goodsid
+        JOIN warehouse wh ON wh.whid = inv.whid
+        <if test="keyword != null and keyword != ''">
+            WHERE g.name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY wh.name, g.name
+    </select>
+
     <select id="findById" resultType="map">
         SELECT * FROM ${tableName}
         WHERE
