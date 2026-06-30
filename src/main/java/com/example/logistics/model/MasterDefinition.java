@@ -8,8 +8,8 @@ public record MasterDefinition(
         String tableName,
         List<String> idColumns,
         List<MasterField> fields
-) {
-    public boolean compositeId() {
-        return idColumns.size() > 1;
+){
+    public boolean compositeId(){
+        return idColumns.size()>1;
     }
 }

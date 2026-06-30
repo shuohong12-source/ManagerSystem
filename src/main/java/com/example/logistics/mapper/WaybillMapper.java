@@ -9,39 +9,25 @@ import java.util.Map;
 
 public interface WaybillMapper {
     List<Map<String, Object>> selectCities();
-
     List<Map<String, Object>> selectRegions();
-
     List<Map<String, Object>> selectGoods();
-
     List<Map<String, Object>> selectWarehouses();
-
     List<Map<String, Object>> search(@Param("status") String status,
                                      @Param("regionId") Long regionId,
                                      @Param("start") LocalDateTime start,
                                      @Param("end") LocalDateTime end);
-
     Map<String, Object> selectWaybill(@Param("waybillId") Long waybillId);
-
     List<Map<String, Object>> selectItems(@Param("waybillId") Long waybillId);
-
     Map<String, Object> selectItem(@Param("waybillId") Long waybillId,
                                    @Param("itemId") Long itemId);
-
     String selectPriority(@Param("waybillId") Long waybillId);
-
     int countItems(@Param("waybillId") Long waybillId);
-
     BigDecimal sumItemFreight(@Param("waybillId") Long waybillId);
-
     int insertWaybill(Map<String, Object> waybill);
-
     BigDecimal selectDeclaredPrice(@Param("goodsId") Long goodsId);
-
     int freezeInventory(@Param("whId") Long whId,
                         @Param("goodsId") Long goodsId,
                         @Param("quantity") Integer quantity);
-
     int insertWaybillItem(@Param("waybillId") Long waybillId,
                           @Param("goodsId") Long goodsId,
                           @Param("whId") Long whId,
@@ -50,7 +36,6 @@ public interface WaybillMapper {
                           @Param("premiumRate") BigDecimal premiumRate,
                           @Param("tax") BigDecimal tax,
                           @Param("lineFreight") BigDecimal lineFreight);
-
     int updateWaybillItem(@Param("waybillId") Long waybillId,
                           @Param("itemId") Long itemId,
                           @Param("goodsId") Long goodsId,
@@ -60,10 +45,8 @@ public interface WaybillMapper {
                           @Param("premiumRate") BigDecimal premiumRate,
                           @Param("tax") BigDecimal tax,
                           @Param("lineFreight") BigDecimal lineFreight);
-
     int deleteWaybillItem(@Param("waybillId") Long waybillId,
                           @Param("itemId") Long itemId);
-
     int insertStockTxn(@Param("whId") Object whId,
                        @Param("goodsId") Object goodsId,
                        @Param("waybillId") Long waybillId,
@@ -71,34 +54,25 @@ public interface WaybillMapper {
                        @Param("txnType") String txnType,
                        @Param("operatorName") String operatorName,
                        @Param("remark") String remark);
-
     int updateWaybillFreight(@Param("waybillId") Long waybillId,
                              @Param("totalFreight") BigDecimal totalFreight);
-
     int updateWaybillHeader(@Param("waybillId") Long waybillId,
                             @Param("priority") String priority,
                             @Param("clerk") String clerk,
                             @Param("destinationCityId") Long destinationCityId,
                             @Param("remark") String remark);
-
     int updateItemFreightsForPriority(@Param("waybillId") Long waybillId,
                                       @Param("premiumRate") BigDecimal premiumRate,
                                       @Param("tax") BigDecimal tax);
-
     String selectStatus(@Param("waybillId") Long waybillId);
-
     int releaseInventory(@Param("whId") Object whId,
                          @Param("goodsId") Object goodsId,
                          @Param("quantity") Integer quantity);
-
     int shipInventory(@Param("whId") Object whId,
                       @Param("goodsId") Object goodsId,
                       @Param("quantity") Integer quantity);
-
     int updateStatus(@Param("waybillId") Long waybillId,
                      @Param("status") String status);
-
     int deleteStockTxnsByWaybill(@Param("waybillId") Long waybillId);
-
     int deleteWaybill(@Param("waybillId") Long waybillId);
 }

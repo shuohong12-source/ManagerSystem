@@ -18,7 +18,6 @@ import java.util.StringJoiner;
 public class MasterDataService {
     private final MasterDataMapper masterDataMapper;
     private final Map<String, MasterDefinition> definitions = new LinkedHashMap<>();
-
     public MasterDataService(MasterDataMapper masterDataMapper) {
         this.masterDataMapper = masterDataMapper;
         definitions.put("regions", new MasterDefinition("regions", "枢纽区域", "hub_region",
@@ -59,11 +58,9 @@ public class MasterDataService {
                         MasterField.number("frozen_quantity", "冻结库存", true),
                         MasterField.number("safety_stock", "安全库存", true))));
     }
-
     public List<MasterDefinition> definitions() {
         return new ArrayList<>(definitions.values());
     }
-
     public MasterDefinition definition(String type) {
         MasterDefinition definition = definitions.get(type);
         if (definition == null) {
@@ -71,7 +68,6 @@ public class MasterDataService {
         }
         return definition;
     }
-
     public List<Map<String, Object>> findAll(MasterDefinition definition, String keyword) {
         if ("inventory".equals(definition.type())) {
             String effectiveKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
@@ -80,13 +76,11 @@ public class MasterDataService {
         String effectiveKeyword = StringUtils.hasText(keyword) && hasColumn(definition, "name") ? keyword.trim() : null;
         return masterDataMapper.findAll(definition.tableName(), effectiveKeyword, definition.idColumns().get(0));
     }
-
     public Map<String, Object> findById(MasterDefinition definition, String idValue) {
         IdParts parts = idParts(definition, idValue);
         List<Map<String, Object>> rows = masterDataMapper.findById(definition.tableName(), parts.conditions());
         return rows.isEmpty() ? Map.of() : rows.get(0);
     }
-
     public void save(MasterDefinition definition, Map<String, String> form) {
         String editId = form.get("_editId");
         if (StringUtils.hasText(editId)) {
@@ -95,12 +89,10 @@ public class MasterDataService {
             insert(definition, form);
         }
     }
-
     public void delete(MasterDefinition definition, String idValue) {
         IdParts parts = idParts(definition, idValue);
         masterDataMapper.delete(definition.tableName(), parts.conditions());
     }
-
     public Map<String, List<OptionItem>> optionMap() {
         Map<String, List<OptionItem>> options = new LinkedHashMap<>();
         options.put("regions", masterDataMapper.selectRegionOptions());
@@ -109,7 +101,6 @@ public class MasterDataService {
         options.put("warehouses", masterDataMapper.selectWarehouseOptions());
         return options;
     }
-
     public String rowId(MasterDefinition definition, Map<String, Object> row) {
         StringJoiner joiner = new StringJoiner("_");
         for (String column : definition.idColumns()) {
@@ -117,7 +108,6 @@ public class MasterDataService {
         }
         return joiner.toString();
     }
-
     public Object displayValue(MasterField field, Map<String, Object> row, Map<String, List<OptionItem>> options) {
         Object rawValue = row.get(field.name());
         if (!"select".equals(field.type()) || rawValue == null) {
@@ -129,13 +119,11 @@ public class MasterDataService {
                 .findFirst()
                 .orElse(rawValue.toString());
     }
-
     private void insert(MasterDefinition definition, Map<String, String> form) {
         List<String> columns = definition.fields().stream().map(MasterField::name).toList();
         List<Object> values = columns.stream().map(c -> valueFor(definition, c, form.get(c))).toList();
         masterDataMapper.insert(definition.tableName(), columns, values);
     }
-
     private void update(MasterDefinition definition, String editId, Map<String, String> form) {
         List<String> columns = definition.fields().stream()
                 .map(MasterField::name)
@@ -147,11 +135,9 @@ public class MasterDataService {
                 .toList();
         masterDataMapper.update(definition.tableName(), assignments, parts.conditions());
     }
-
     private boolean hasColumn(MasterDefinition definition, String column) {
         return definition.fields().stream().anyMatch(f -> f.name().equals(column));
     }
-
     private Object valueFor(MasterDefinition definition, String column, String raw) {
         MasterField field = definition.fields().stream()
                 .filter(f -> f.name().equals(column))
@@ -167,7 +153,6 @@ public class MasterDataService {
             default -> raw.trim();
         };
     }
-
     private IdParts idParts(MasterDefinition definition, String idValue) {
         String[] values = idValue.split("_");
         if (values.length != definition.idColumns().size()) {
@@ -179,14 +164,12 @@ public class MasterDataService {
         }
         return new IdParts(conditions);
     }
-
     private Map<String, Object> columnValue(String column, Object value) {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("column", column);
         result.put("value", value);
         return result;
     }
-
     private record IdParts(List<Map<String, Object>> conditions) {
     }
 }

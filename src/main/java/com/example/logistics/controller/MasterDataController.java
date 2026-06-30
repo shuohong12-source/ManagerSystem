@@ -15,11 +15,9 @@ import java.util.Map;
 @Controller
 public class MasterDataController {
     private final MasterDataService masterDataService;
-
     public MasterDataController(MasterDataService masterDataService) {
         this.masterDataService = masterDataService;
     }
-
     @GetMapping("/master/{type}")
     public String page(@PathVariable String type,
                        @RequestParam(required = false) String q,
@@ -36,7 +34,6 @@ public class MasterDataController {
         model.addAttribute("rowIdService", masterDataService);
         return "master";
     }
-
     @PostMapping("/master/{type}/save")
     public String save(@PathVariable String type,
                        @RequestParam Map<String, String> form,
@@ -50,7 +47,6 @@ public class MasterDataController {
         }
         return "redirect:/master/" + type;
     }
-
     @PostMapping("/master/{type}/delete")
     public String delete(@PathVariable String type,
                          @RequestParam String id,

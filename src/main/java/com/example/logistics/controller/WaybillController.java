@@ -16,11 +16,9 @@ import java.util.List;
 @Controller
 public class WaybillController {
     private final WaybillService waybillService;
-
     public WaybillController(WaybillService waybillService) {
         this.waybillService = waybillService;
     }
-
     @GetMapping("/waybills")
     public String list(@RequestParam(required = false) String status,
                        @RequestParam(required = false) Long regionId,
@@ -35,7 +33,6 @@ public class WaybillController {
         model.addAttribute("end", end);
         return "waybills";
     }
-
     @GetMapping("/waybills/new")
     public String createPage(Model model) {
         model.addAttribute("cities", waybillService.cities());
@@ -43,14 +40,12 @@ public class WaybillController {
         model.addAttribute("warehouses", waybillService.warehouses());
         return "waybill-form";
     }
-
     @GetMapping("/waybills/{id}/edit")
     public String editPage(@PathVariable Long id, Model model) {
         model.addAttribute("waybill", waybillService.waybill(id));
         model.addAttribute("cities", waybillService.cities());
         return "waybill-edit";
     }
-
     @PostMapping("/waybills/{id}/edit")
     public String updateWaybill(@PathVariable Long id,
                                 @RequestParam String priority,
@@ -67,7 +62,6 @@ public class WaybillController {
             return "redirect:/waybills/" + id + "/edit";
         }
     }
-
     @PostMapping("/waybills/{id}/delete")
     public String deleteWaybill(@PathVariable Long id,
                                 RedirectAttributes redirectAttributes) {
@@ -79,7 +73,6 @@ public class WaybillController {
         }
         return "redirect:/waybills";
     }
-
     @PostMapping("/waybills")
     public String create(@RequestParam String priority,
                          @RequestParam String clerk,
@@ -98,7 +91,6 @@ public class WaybillController {
             return "redirect:/waybills/new";
         }
     }
-
     @GetMapping("/waybills/{id}/items")
     public String items(@PathVariable Long id, Model model) {
         String status = waybillService.status(id);
@@ -110,7 +102,6 @@ public class WaybillController {
         model.addAttribute("canEditItems", !"已取消".equals(status) && !"已签收".equals(status));
         return "waybill-items";
     }
-
     @PostMapping("/waybills/{id}/items/{itemId}/update")
     public String updateItem(@PathVariable Long id,
                              @PathVariable Long itemId,
@@ -126,7 +117,6 @@ public class WaybillController {
         }
         return "redirect:/waybills/" + id + "/items";
     }
-
     @PostMapping("/waybills/{id}/items/{itemId}/delete")
     public String deleteItem(@PathVariable Long id,
                              @PathVariable Long itemId,
@@ -139,7 +129,6 @@ public class WaybillController {
         }
         return "redirect:/waybills/" + id + "/items";
     }
-
     @PostMapping("/waybills/{id}/status")
     public String status(@PathVariable Long id,
                          @RequestParam String status,

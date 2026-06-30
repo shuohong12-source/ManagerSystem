@@ -11,12 +11,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class RecommendationController {
     private final RecommendationService recommendationService;
     private final WaybillService waybillService;
-
     public RecommendationController(RecommendationService recommendationService, WaybillService waybillService) {
         this.recommendationService = recommendationService;
         this.waybillService = waybillService;
     }
-
     @GetMapping("/recommendations")
     public String page(@RequestParam(required = false) Long destinationCityId,
                        @RequestParam(required = false) Long goodsId,

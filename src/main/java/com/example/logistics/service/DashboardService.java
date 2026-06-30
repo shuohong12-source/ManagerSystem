@@ -10,11 +10,9 @@ import java.util.Map;
 @Service
 public class DashboardService {
     private final DashboardMapper dashboardMapper;
-
     public DashboardService(DashboardMapper dashboardMapper) {
         this.dashboardMapper = dashboardMapper;
     }
-
     public Map<String, Object> overview() {
         return Map.of(
                 "waybillCount", dashboardMapper.countWaybills(),
@@ -23,7 +21,6 @@ public class DashboardService {
                 "freightTotal", dashboardMapper.sumFreight()
         );
     }
-
     public List<Map<String, Object>> regionVolumes() {
         return dashboardMapper.selectRegionVolumes()
                 .stream()
@@ -37,19 +34,15 @@ public class DashboardService {
                 })
                 .toList();
     }
-
     public Object topGoods() {
         return dashboardMapper.selectTopGoods();
     }
-
     public Object lowInventory() {
         return dashboardMapper.selectLowInventory();
     }
-
     public Object statusDistribution() {
         return dashboardMapper.selectStatusDistribution();
     }
-
     public Object monthlyTrend() {
         return dashboardMapper.selectMonthlyTrend();
     }
