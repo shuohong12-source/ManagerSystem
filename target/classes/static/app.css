@@ -418,6 +418,10 @@ tbody tr:hover {
     grid-column: span 1;
 }
 
+.goods-panel {
+    grid-column: 1 / -1;
+}
+
 .panel-head {
     display: flex;
     align-items: flex-start;
@@ -471,6 +475,10 @@ tbody tr:hover {
 
 .chart-canvas.tall {
     min-height: 360px;
+}
+
+.chart-canvas.trend-wide {
+    min-height: 340px;
 }
 
 .chart-canvas svg {
@@ -639,6 +647,12 @@ tbody tr:hover {
 
 .chart-panel {
     min-height: 330px;
+    overflow: hidden;
+}
+
+.trend-panel {
+    margin-top: 16px;
+    min-height: 400px;
 }
 
 .chart-legend {
