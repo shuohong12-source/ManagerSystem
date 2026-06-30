@@ -1,0 +1,5 @@
+com\example\logistics\mapper\MasterDataMapper.class
+com\example\logistics\mapper\ReportMapper.class
+com\example\logistics\mapper\DashboardMapper.class
+com\example\logistics\mapper\WaybillMapper.class
+com\example\logistics\mapper\RecommendationMapper.class

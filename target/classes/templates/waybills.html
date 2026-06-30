@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>运单管理</title>
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">智慧跨境物流供应链管理系统</div>
+    <nav class="nav">
+        <a href="/">BI看板</a>
+        <a href="/master/regions">基础数据</a>
+        <a href="/waybills">运单管理</a>
+        <a href="/recommendations">仓库推荐</a>
+        <a href="/reports/monthly">月度对账</a>
+    </nav>
+</header>
+<main class="container">
+    <h1 class="page-title">运单管理</h1>
+    <div th:if="${success}" class="message success" th:text="${success}"></div>
+    <div th:if="${error}" class="message error" th:text="${error}"></div>
+    <section class="panel">
+        <form class="toolbar" method="get">
+            <label><span>状态</span>
+                <select name="status">
+                    <option value="">全部</option>
+                    <option value="待发运" th:selected="${status == '待发运'}">待发运</option>
+                    <option value="运输中" th:selected="${status == '运输中'}">运输中</option>
+                    <option value="已签收" th:selected="${status == '已签收'}">已签收</option>
+                    <option value="已取消" th:selected="${status == '已取消'}">已取消</option>
+                </select>
+            </label>
+            <label><span>目的枢纽</span>
+                <select name="regionId">
+                    <option value="">全部</option>
+                    <option th:each="r : ${regions}" th:value="${r.regionid}" th:text="${r.name}" th:selected="${regionId != null and regionId == r.regionid}">区域</option>
+                </select>
+            </label>
+            <label><span>开始日期</span><input type="date" name="start" th:value="${start}"></label>
+            <label><span>结束日期</span><input type="date" name="end" th:value="${end}"></label>
+            <button type="submit">查询</button>
+            <a class="button" href="/waybills/new">创建运单</a>
+        </form>
+        <table>
+            <thead><tr><th>编号</th><th>状态</th><th>运费</th><th>创建日期</th><th>优先级</th><th>跟单员</th><th>目的地</th><th>数量</th><th>操作</th></tr></thead>
+            <tbody>
+            <tr th:each="w : ${waybills}">
+                <td th:text="${w.waybillid}">1</td>
+                <td th:text="${w.status}">状态</td>
+                <td th:text="${w.total_freight}">0</td>
+                <td th:text="${#temporals.format(w.create_date, 'yyyy-MM-dd HH:mm')}">日期</td>
+                <td th:text="${w.priority}">普通</td>
+                <td th:text="${w.clerk}">张三</td>
+                <td th:text="${w.destination_region + ' / ' + w.destination_city}">城市</td>
+                <td th:text="${w.item_quantity}">0</td>
+                <td>
+                    <div class="actions">
+                        <a class="button secondary" th:href="@{'/waybills/' + ${w.waybillid} + '/items'}">明细</a>
+                        <form th:action="@{'/waybills/' + ${w.waybillid} + '/status'}" method="post">
+                            <select name="status">
+                                <option>待发运</option><option>运输中</option><option>已签收</option><option>已取消</option>
+                            </select>
+                            <button type="submit">改状态</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(waybills)}"><td colspan="9">暂无运单</td></tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>

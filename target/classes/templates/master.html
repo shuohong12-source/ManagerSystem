@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${definition.title} + '维护'">基础数据</title>
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">智慧跨境物流供应链管理系统</div>
+    <nav class="nav">
+        <a href="/">BI看板</a>
+        <a href="/master/regions">基础数据</a>
+        <a href="/waybills">运单管理</a>
+        <a href="/recommendations">仓库推荐</a>
+        <a href="/reports/monthly">月度对账</a>
+    </nav>
+</header>
+<main class="container">
+    <h1 class="page-title" th:text="${definition.title} + '维护'">基础数据维护</h1>
+    <div class="tabs">
+        <a th:each="d : ${definitions}" th:href="@{'/master/' + ${d.type}}" th:classappend="${d.type == definition.type} ? 'active' : ''" th:text="${d.title}">类别</a>
+    </div>
+    <div th:if="${success}" class="message success" th:text="${success}"></div>
+    <div th:if="${error}" class="message error" th:text="${error}"></div>
+
+    <section class="panel">
+        <h2 th:text="${editId == null ? '新增' : '编辑'} + ${definition.title}">新增</h2>
+        <form th:action="@{'/master/' + ${definition.type} + '/save'}" method="post">
+            <input type="hidden" name="_editId" th:value="${editId}">
+            <div class="form-grid">
+                <label th:each="field : ${definition.fields}" th:classappend="${field.name == 'remark'} ? 'form-wide'">
+                    <span th:text="${field.label}">字段</span>
+                    <select th:if="${field.type == 'select'}" th:name="${field.name}" th:required="${field.required}" th:disabled="${editId != null and definition.idColumns.contains(field.name)}">
+                        <option value="">请选择</option>
+                        <option th:each="opt : ${options[field.refType]}" th:value="${opt.id}" th:text="${opt.label}" th:selected="${editRow[field.name] != null and editRow[field.name].toString() == opt.id.toString()}">选项</option>
+                    </select>
+                    <input th:if="${field.type != 'select'}"
+                           th:type="${field.type == 'money' or field.type == 'number' ? 'number' : 'text'}"
+                           th:step="${field.type == 'money' ? '0.01' : '1'}"
+                           th:name="${field.name}"
+                           th:value="${editRow[field.name]}"
+                           th:required="${field.required}"
+                           th:readonly="${editId != null and definition.idColumns.contains(field.name)}">
+                    <input th:if="${field.type == 'select' and editId != null and definition.idColumns.contains(field.name)}" type="hidden" th:name="${field.name}" th:value="${editRow[field.name]}">
+                </label>
+            </div>
+            <div class="actions" style="margin-top:14px">
+                <button type="submit">保存</button>
+                <a class="button secondary" th:href="@{'/master/' + ${definition.type}}">清空</a>
+            </div>
+        </form>
+    </section>
+
+    <section class="panel" style="margin-top:16px">
+        <form class="toolbar" method="get">
+            <label>
+                <span>名称搜索</span>
+                <input type="text" name="q" th:value="${q}" placeholder="输入名称关键字">
+            </label>
+            <button type="submit">查询</button>
+        </form>
+        <table>
+            <thead>
+            <tr>
+                <th th:each="field : ${definition.fields}" th:text="${field.label}">字段</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="row : ${rows}">
+                <td th:each="field : ${definition.fields}" th:text="${rowIdService.displayValue(field, row, options)}">值</td>
+                <td>
+                    <div class="actions">
+                        <a class="button secondary" th:href="@{'/master/' + ${definition.type} + '?editId=' + ${rowIdService.rowId(definition,row)}}">编辑</a>
+                        <form th:action="@{'/master/' + ${definition.type} + '/delete'}" method="post" onsubmit="return confirm('确认删除该记录？')">
+                            <input type="hidden" name="id" th:value="${rowIdService.rowId(definition,row)}">
+                            <button class="danger" type="submit">删除</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(rows)}"><td th:colspan="${definition.fields.size() + 1}">暂无数据</td></tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>

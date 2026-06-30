@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>月度对账</title>
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">智慧跨境物流供应链管理系统</div>
+    <nav class="nav">
+        <a href="/">BI看板</a>
+        <a href="/master/regions">基础数据</a>
+        <a href="/waybills">运单管理</a>
+        <a href="/recommendations">仓库推荐</a>
+        <a href="/reports/monthly">月度对账</a>
+    </nav>
+</header>
+<main class="container">
+    <h1 class="page-title">月度物流费用对账</h1>
+    <section class="panel">
+        <form class="toolbar" method="get">
+            <label><span>月份</span><input type="month" name="month" th:value="${month}"></label>
+            <button type="submit">生成报表</button>
+            <a class="button" th:href="@{'/reports/monthly/export?month=' + ${month}}">导出 Excel</a>
+        </form>
+        <table>
+            <thead><tr><th>月份</th><th>目的枢纽</th><th>目的城市</th><th>状态</th><th>运单数</th><th>商品数量</th><th>运费金额</th></tr></thead>
+            <tbody>
+            <tr th:each="row : ${rows}">
+                <td th:text="${row.month_value}">月份</td>
+                <td th:text="${row.destination_region}">区域</td>
+                <td th:text="${row.destination_city}">城市</td>
+                <td th:text="${row.status}">状态</td>
+                <td th:text="${row.waybill_count}">0</td>
+                <td th:text="${row.goods_quantity}">0</td>
+                <td th:text="${row.freight_amount}">0</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(rows)}"><td colspan="7">当前月份暂无费用数据</td></tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>

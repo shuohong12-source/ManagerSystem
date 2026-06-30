@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>创建运单</title>
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">智慧跨境物流供应链管理系统</div>
+    <nav class="nav">
+        <a href="/">BI看板</a>
+        <a href="/master/regions">基础数据</a>
+        <a href="/waybills">运单管理</a>
+        <a href="/recommendations">仓库推荐</a>
+        <a href="/reports/monthly">月度对账</a>
+    </nav>
+</header>
+<main class="container">
+    <h1 class="page-title">创建运单</h1>
+    <div th:if="${error}" class="message error" th:text="${error}"></div>
+    <form class="panel" method="post" action="/waybills">
+        <div class="form-grid">
+            <label><span>运输优先级</span>
+                <select name="priority" id="priority">
+                    <option value="普通">普通</option>
+                    <option value="加急">加急</option>
+                    <option value="特急">特急</option>
+                </select>
+            </label>
+            <label><span>跟单员</span><input name="clerk" required placeholder="如：张三"></label>
+            <label><span>目的地城市</span>
+                <select name="destinationCityId" required>
+                    <option value="">请选择</option>
+                    <option th:each="c : ${cities}" th:value="${c.cityid}" th:text="${c.name}">城市</option>
+                </select>
+            </label>
+            <label class="form-wide"><span>备注</span><textarea name="remark" rows="2"></textarea></label>
+        </div>
+
+        <h2>运单项</h2>
+        <div id="items">
+            <div class="item-card">
+                <label><span>商品</span>
+                    <select name="goodsid" required onchange="recalc()">
+                        <option value="">请选择</option>
+                        <option th:each="g : ${goods}" th:value="${g.goodsid}" th:data-price="${g.declared_price}" th:text="${g.name + ' / ￥' + g.declared_price}">商品</option>
+                    </select>
+                </label>
+                <label><span>发货仓库</span>
+                    <select name="whid" required>
+                        <option value="">请选择</option>
+                        <option th:each="w : ${warehouses}" th:value="${w.whid}" th:text="${w.name}">仓库</option>
+                    </select>
+                </label>
+                <label><span>数量</span><input type="number" name="quantity" min="1" value="1" required oninput="recalc()"></label>
+                <button type="button" class="secondary" onclick="removeItem(this)">移除</button>
+            </div>
+        </div>
+        <div class="actions">
+            <button type="button" class="secondary" onclick="addItem()">添加运单项</button>
+            <button type="submit">提交运单</button>
+            <a class="button secondary" href="/waybills">返回</a>
+        </div>
+        <p class="muted">前端预估总运费：<strong id="freightPreview">0.00</strong> 元，最终以服务器事务计算为准。</p>
+    </form>
+</main>
+<script>
+    function addItem() {
+        const first = document.querySelector('.item-card');
+        const node = first.cloneNode(true);
+        node.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+        node.querySelector('input[name="quantity"]').value = 1;
+        document.getElementById('items').appendChild(node);
+        recalc();
+    }
+
+    function removeItem(button) {
+        if (document.querySelectorAll('.item-card').length > 1) {
+            button.closest('.item-card').remove();
+            recalc();
+        }
+    }
+
+    function recalc() {
+        const priority = document.getElementById('priority').value;
+        const premium = priority === '特急' ? 0.5 : priority === '加急' ? 0.2 : 0;
+        let total = 0;
+        document.querySelectorAll('.item-card').forEach(card => {
+            const goods = card.querySelector('select[name="goodsid"]');
+            const selected = goods.options[goods.selectedIndex];
+            const price = Number(selected.dataset.price || 0);
+            const qty = Number(card.querySelector('input[name="quantity"]').value || 0);
+            const amount = price * qty;
+            const base = amount * 0.08;
+            total += base * (1 + premium) + amount * 0.06;
+        });
+        document.getElementById('freightPreview').textContent = total.toFixed(2);
+    }
+
+    document.getElementById('priority').addEventListener('change', recalc);
+    recalc();
+</script>
+</body>
+</html>

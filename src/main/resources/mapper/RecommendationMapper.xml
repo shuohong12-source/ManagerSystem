@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.logistics.mapper.RecommendationMapper">
+    <select id="recommend" resultType="map">
+        SELECT
+            wh.whid,
+            wh.name AS warehouse_name,
+            wc.name AS warehouse_city,
+            wr.name AS warehouse_region,
+            inv.quantity,
+            CASE WHEN wh.cityid = #{destinationCityId} THEN '同城市'
+                 WHEN rd.distance_level = 0 THEN '同枢纽区域'
+                 WHEN rd.distance_level = 1 THEN '相邻枢纽区域'
+                 ELSE '其他区域' END AS reason,
+            CASE WHEN wh.cityid = #{destinationCityId} THEN 0 ELSE 1 END AS city_rank,
+            rd.distance_level
+        FROM warehouse wh
+        JOIN city wc ON wc.cityid = wh.cityid
+        JOIN hub_region wr ON wr.regionid = wc.regionid
+        JOIN inventory inv ON inv.whid = wh.whid AND inv.goodsid = #{goodsId}
+        JOIN city dc ON dc.cityid = #{destinationCityId}
+        JOIN region_distance rd ON rd.from_regionid = wc.regionid AND rd.to_regionid = dc.regionid
+        WHERE inv.quantity &gt; 0
+        ORDER BY city_rank, rd.distance_level, inv.quantity DESC
+    </select>
+</mapper>

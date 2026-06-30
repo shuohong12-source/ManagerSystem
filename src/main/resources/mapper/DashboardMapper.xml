@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.logistics.mapper.DashboardMapper">
+    <select id="countWaybills" resultType="long">
+        SELECT COUNT(*) FROM waybill
+    </select>
+
+    <select id="countGoods" resultType="long">
+        SELECT COUNT(*) FROM goods
+    </select>
+
+    <select id="countWarehouses" resultType="long">
+        SELECT COUNT(*) FROM warehouse
+    </select>
+
+    <select id="sumFreight" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(total_freight), 0) FROM waybill
+    </select>
+
+    <select id="selectRegionVolumes" resultType="map">
+        SELECT * FROM v_region_freight_volume ORDER BY total_quantity DESC
+    </select>
+
+    <select id="selectTopGoods" resultType="map">
+        SELECT * FROM v_top_goods_value LIMIT 10
+    </select>
+
+    <select id="selectLowInventory" resultType="map">
+        SELECT wh.name AS warehouse_name, g.name AS goods_name, inv.quantity, inv.safety_stock
+        FROM inventory inv
+        JOIN warehouse wh ON wh.whid = inv.whid
+        JOIN goods g ON g.goodsid = inv.goodsid
+        WHERE inv.quantity &lt;= inv.safety_stock
+        ORDER BY inv.quantity
+    </select>
+
+    <select id="selectStatusDistribution" resultType="map">
+        SELECT status, COUNT(*) AS count_value
+        FROM waybill
+        GROUP BY status
+        ORDER BY FIELD(status, '待发运', '运输中', '已签收', '已取消')
+    </select>
+
+    <select id="selectMonthlyTrend" resultType="map">
+        SELECT
+            DATE_FORMAT(create_date, '%Y-%m') AS month_value,
+            COUNT(*) AS waybill_count,
+            COALESCE(SUM(total_freight), 0) AS freight_amount
+        FROM waybill
+        GROUP BY DATE_FORMAT(create_date, '%Y-%m')
+        ORDER BY month_value
+    </select>
+</mapper>

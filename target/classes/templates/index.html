@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>物流管理系统 - BI看板</title>
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">智慧跨境物流供应链管理系统</div>
+    <nav class="nav">
+        <a href="/">BI看板</a>
+        <a href="/master/regions">基础数据</a>
+        <a href="/waybills">运单管理</a>
+        <a href="/recommendations">仓库推荐</a>
+        <a href="/reports/monthly">月度对账</a>
+    </nav>
+</header>
+<main class="container dashboard">
+    <div class="page-heading">
+        <div>
+            <h1 class="page-title">BI 数据看板</h1>
+            <p class="page-subtitle">运单、货值、区域流向和库存风险的实时概览</p>
+        </div>
+        <a class="button secondary" href="/waybills">查看运单</a>
+    </div>
+
+    <section class="metric-grid">
+        <div class="metric metric-blue">
+            <span class="muted">运单总数</span>
+            <strong th:text="${overview.waybillCount}">0</strong>
+            <small>当前系统累计运单</small>
+        </div>
+        <div class="metric metric-green">
+            <span class="muted">累计运费</span>
+            <strong th:text="${overview.freightTotal}">0</strong>
+            <small>全部运单合计</small>
+        </div>
+        <div class="metric metric-gold">
+            <span class="muted">商品数</span>
+            <strong th:text="${overview.goodsCount}">0</strong>
+            <small>基础商品档案</small>
+        </div>
+        <div class="metric metric-red">
+            <span class="muted">仓库数</span>
+            <strong th:text="${overview.warehouseCount}">0</strong>
+            <small>可调度仓库</small>
+        </div>
+    </section>
+
+    <section class="dashboard-grid">
+        <div class="panel chart-panel chart-panel-wide">
+            <div class="panel-head">
+                <div>
+                    <h2>枢纽区域表现</h2>
+                    <p>按目的区域聚合货量和运费</p>
+                </div>
+                <div class="segmented" data-region-mode>
+                    <button type="button" class="active" data-mode="quantity">件数</button>
+                    <button type="button" data-mode="freight">运费</button>
+                </div>
+            </div>
+            <div class="chart-canvas" id="regionChart"></div>
+        </div>
+
+        <div class="panel chart-panel">
+            <div class="panel-head">
+                <div>
+                    <h2>运单状态</h2>
+                    <p>四类状态占比</p>
+                </div>
+            </div>
+            <div class="chart-canvas compact" id="statusChart"></div>
+            <div class="chart-legend" id="statusLegend"></div>
+        </div>
+
+        <div class="panel chart-panel">
+            <div class="panel-head">
+                <div>
+                    <h2>高价值商品</h2>
+                    <p>按申报货值排行</p>
+                </div>
+            </div>
+            <div class="chart-canvas tall" id="goodsChart"></div>
+        </div>
+
+        <div class="panel chart-panel">
+            <div class="panel-head">
+                <div>
+                    <h2>月度趋势</h2>
+                    <p>运单量与运费变化</p>
+                </div>
+            </div>
+            <div class="chart-canvas tall" id="trendChart"></div>
+        </div>
+    </section>
+
+    <section class="panel table-panel">
+        <div class="panel-head">
+            <div>
+                <h2>库存预警</h2>
+                <p>低于或等于安全库存的商品</p>
+            </div>
+            <a class="button secondary" href="/master/inventory">维护库存</a>
+        </div>
+        <table>
+            <thead><tr><th>仓库</th><th>商品</th><th>当前库存</th><th>安全库存</th></tr></thead>
+            <tbody>
+            <tr th:each="row : ${lowInventory}">
+                <td th:text="${row.warehouse_name}">仓库</td>
+                <td th:text="${row.goods_name}">商品</td>
+                <td th:text="${row.quantity}">0</td>
+                <td th:text="${row.safety_stock}">0</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(lowInventory)}"><td colspan="4">暂无低库存商品</td></tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+
+<script th:inline="javascript">
+    window.dashboardData = {
+        regionVolumes: /*[[${regionVolumes}]]*/ [],
+        topGoods: /*[[${topGoods}]]*/ [],
+        statusDistribution: /*[[${statusDistribution}]]*/ [],
+        monthlyTrend: /*[[${monthlyTrend}]]*/ []
+    };
+</script>
+<script src="/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.logistics.mapper.WaybillMapper">
+    <select id="selectCities" resultType="map">
+        SELECT cityid, name FROM city ORDER BY name
+    </select>
+
+    <select id="selectRegions" resultType="map">
+        SELECT regionid, name FROM hub_region ORDER BY regionid
+    </select>
+
+    <select id="selectGoods" resultType="map">
+        SELECT goodsid, name, declared_price FROM goods ORDER BY name
+    </select>
+
+    <select id="selectWarehouses" resultType="map">
+        SELECT whid, name FROM warehouse ORDER BY name
+    </select>
+
+    <select id="search" resultType="map">
+        SELECT w.waybillid, w.status, w.total_freight, w.create_date, w.priority, w.clerk,
+               c.name AS destination_city, r.name AS destination_region,
+               COALESCE(SUM(i.quantity), 0) AS item_quantity
+        FROM waybill w
+        JOIN city c ON c.cityid = w.destination_cityid
+        JOIN hub_region r ON r.regionid = c.regionid
+        LEFT JOIN waybill_item i ON i.waybillid = w.waybillid
+        <where>
+            <if test="status != null and status != ''">
+                AND w.status = #{status}
+            </if>
+            <if test="regionId != null">
+                AND r.regionid = #{regionId}
+            </if>
+            <if test="start != null">
+                AND w.create_date &gt;= #{start}
+            </if>
+            <if test="end != null">
+                AND w.create_date &lt; #{end}
+            </if>
+        </where>
+        GROUP BY w.waybillid, w.status, w.total_freight, w.create_date, w.priority, w.clerk, c.name, r.name
+        ORDER BY w.create_date DESC
+    </select>
+
+    <select id="selectItems" resultType="map">
+        SELECT i.*, g.name AS goods_name, wh.name AS warehouse_name
+        FROM waybill_item i
+        JOIN goods g ON g.goodsid = i.goodsid
+        JOIN warehouse wh ON wh.whid = i.whid
+        WHERE i.waybillid = #{waybillId}
+        ORDER BY i.itemid
+    </select>
+
+    <insert id="insertWaybill" parameterType="map" useGeneratedKeys="true" keyProperty="waybillid">
+        INSERT INTO waybill(status, total_freight, create_date, priority, clerk, destination_cityid, remark)
+        VALUES('待发运', 0, #{createDate}, #{priority}, #{clerk}, #{destinationCityId}, #{remark})
+    </insert>
+
+    <select id="selectDeclaredPrice" resultType="java.math.BigDecimal">
+        SELECT declared_price FROM goods WHERE goodsid = #{goodsId}
+    </select>
+
+    <update id="freezeInventory">
+        UPDATE inventory
+        SET quantity = quantity - #{quantity}, frozen_quantity = frozen_quantity + #{quantity}
+        WHERE whid = #{whId} AND goodsid = #{goodsId} AND quantity &gt;= #{quantity}
+    </update>
+
+    <insert id="insertWaybillItem">
+        INSERT INTO waybill_item(waybillid, goodsid, whid, quantity, base_freight, premium_rate, tax, line_freight)
+        VALUES(#{waybillId}, #{goodsId}, #{whId}, #{quantity}, #{baseFreight}, #{premiumRate}, #{tax}, #{lineFreight})
+    </insert>
+
+    <insert id="insertStockTxn">
+        INSERT INTO stock_txn(whid, goodsid, waybillid, change_quantity, txn_type, operator_name, remark)
+        VALUES(#{whId}, #{goodsId}, #{waybillId}, #{changeQuantity}, #{txnType}, #{operatorName}, #{remark})
+    </insert>
+
+    <update id="updateWaybillFreight">
+        UPDATE waybill SET total_freight = #{totalFreight} WHERE waybillid = #{waybillId}
+    </update>
+
+    <select id="selectStatus" resultType="string">
+        SELECT status FROM waybill WHERE waybillid = #{waybillId}
+    </select>
+
+    <update id="releaseInventory">
+        UPDATE inventory
+        SET quantity = quantity + #{quantity}, frozen_quantity = frozen_quantity - #{quantity}
+        WHERE whid = #{whId} AND goodsid = #{goodsId} AND frozen_quantity &gt;= #{quantity}
+    </update>
+
+    <update id="shipInventory">
+        UPDATE inventory
+        SET frozen_quantity = frozen_quantity - #{quantity}
+        WHERE whid = #{whId} AND goodsid = #{goodsId} AND frozen_quantity &gt;= #{quantity}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE waybill SET status = #{status} WHERE waybillid = #{waybillId}
+    </update>
+</mapper>

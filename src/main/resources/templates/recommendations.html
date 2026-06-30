@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>智能仓库推荐</title>
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">智慧跨境物流供应链管理系统</div>
+    <nav class="nav">
+        <a href="/">BI看板</a>
+        <a href="/master/regions">基础数据</a>
+        <a href="/waybills">运单管理</a>
+        <a href="/recommendations">仓库推荐</a>
+        <a href="/reports/monthly">月度对账</a>
+    </nav>
+</header>
+<main class="container">
+    <h1 class="page-title">智能仓库推荐</h1>
+    <section class="panel">
+        <form class="toolbar" method="get">
+            <label><span>目的地城市</span>
+                <select name="destinationCityId" required>
+                    <option value="">请选择</option>
+                    <option th:each="c : ${cities}" th:value="${c.cityid}" th:text="${c.name}" th:selected="${destinationCityId != null and destinationCityId == c.cityid}">城市</option>
+                </select>
+            </label>
+            <label><span>商品</span>
+                <select name="goodsId" required>
+                    <option value="">请选择</option>
+                    <option th:each="g : ${goods}" th:value="${g.goodsid}" th:text="${g.name}" th:selected="${goodsId != null and goodsId == g.goodsid}">商品</option>
+                </select>
+            </label>
+            <button type="submit">推荐</button>
+        </form>
+        <table>
+            <thead><tr><th>排名</th><th>仓库</th><th>城市</th><th>枢纽区域</th><th>库存</th><th>推荐原因</th></tr></thead>
+            <tbody>
+            <tr th:each="row, stat : ${results}">
+                <td th:text="${stat.index + 1}">1</td>
+                <td th:text="${row.warehouse_name}">仓库</td>
+                <td th:text="${row.warehouse_city}">城市</td>
+                <td th:text="${row.warehouse_region}">区域</td>
+                <td th:text="${row.quantity}">0</td>
+                <td th:text="${row.reason}">同城市</td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(results)}"><td colspan="6">请选择目的城市和商品后查询</td></tr>
+            </tbody>
+        </table>
+    </section>
+</main>
+</body>
+</html>

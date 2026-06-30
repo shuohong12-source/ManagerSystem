@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.logistics.mapper.MasterDataMapper">
+    <resultMap id="optionItemMap" type="com.example.logistics.model.OptionItem">
+        <constructor>
+            <arg column="id" javaType="long"/>
+            <arg column="label" javaType="string"/>
+        </constructor>
+    </resultMap>
+
+    <select id="findAll" resultType="map">
+        SELECT * FROM ${tableName}
+        <if test="keyword != null and keyword != ''">
+            WHERE name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        ORDER BY ${orderColumn} DESC
+    </select>
+
+    <select id="findById" resultType="map">
+        SELECT * FROM ${tableName}
+        WHERE
+        <foreach collection="conditions" item="condition" separator=" AND ">
+            ${condition.column} = #{condition.value}
+        </foreach>
+    </select>
+
+    <insert id="insert">
+        INSERT INTO ${tableName}
+        (
+        <foreach collection="columns" item="column" separator=",">
+            ${column}
+        </foreach>
+        )
+        VALUES
+        (
+        <foreach collection="values" item="value" separator=",">
+            #{value}
+        </foreach>
+        )
+    </insert>
+
+    <update id="update">
+        UPDATE ${tableName}
+        SET
+        <foreach collection="assignments" item="assignment" separator=",">
+            ${assignment.column} = #{assignment.value}
+        </foreach>
+        WHERE
+        <foreach collection="conditions" item="condition" separator=" AND ">
+            ${condition.column} = #{condition.value}
+        </foreach>
+    </update>
+
+    <delete id="delete">
+        DELETE FROM ${tableName}
+        WHERE
+        <foreach collection="conditions" item="condition" separator=" AND ">
+            ${condition.column} = #{condition.value}
+        </foreach>
+    </delete>
+
+    <select id="selectRegionOptions" resultMap="optionItemMap">
+        SELECT regionid AS id, name AS label FROM hub_region ORDER BY name
+    </select>
+
+    <select id="selectCityOptions" resultMap="optionItemMap">
+        SELECT cityid AS id, name AS label FROM city ORDER BY name
+    </select>
+
+    <select id="selectGoodsOptions" resultMap="optionItemMap">
+        SELECT goodsid AS id, CONCAT(name, ' / ', brand) AS label FROM goods ORDER BY name
+    </select>
+
+    <select id="selectWarehouseOptions" resultMap="optionItemMap">
+        SELECT whid AS id, name AS label FROM warehouse ORDER BY name
+    </select>
+</mapper>
