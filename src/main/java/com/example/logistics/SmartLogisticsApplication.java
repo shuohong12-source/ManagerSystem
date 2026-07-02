@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @MapperScan("com.example.logistics.mapper")
 public class SmartLogisticsApplication {
     public static void main(String[] args) {
-
         SpringApplication.run(SmartLogisticsApplication.class, args);
     }
 }

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 360" role="img" aria-label="食品">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset=".6" stop-color="#ffeec8"/>
+      <stop offset="1" stop-color="#efd79f"/>
+    </linearGradient>
+    <linearGradient id="bag" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" stop-color="#d99428"/>
+      <stop offset="1" stop-color="#9c6411"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#5b3a0d" flood-opacity=".2"/>
+    </filter>
+  </defs>
+  <rect width="720" height="360" rx="18" fill="url(#bg)"/>
+  <path d="M0 280 C112 242 190 306 306 244 C428 178 532 236 720 148 L720 360 L0 360 Z" fill="#f1d899"/>
+  <circle cx="600" cy="92" r="70" fill="#ffffff" opacity=".45"/>
+  <g filter="url(#shadow)">
+    <rect x="206" y="92" width="228" height="206" rx="28" fill="url(#bag)"/>
+    <rect x="242" y="54" width="156" height="68" rx="18" fill="#f6c15b"/>
+    <rect x="254" y="120" width="132" height="70" rx="16" fill="#fff8e7" opacity=".92"/>
+    <path d="M278 146 L360 146 M278 168 L340 168" stroke="#c78116" stroke-width="12" stroke-linecap="round"/>
+    <path d="M242 218 C278 236 336 236 398 214" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" opacity=".62"/>
+  </g>
+  <g filter="url(#shadow)">
+    <circle cx="476" cy="176" r="54" fill="#0f8f7a"/>
+    <path d="M454 174 C464 144 494 144 506 174 C492 214 466 214 454 174 Z" fill="#fff"/>
+    <path d="M480 150 C486 132 504 126 520 130" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+  </g>
+</svg>

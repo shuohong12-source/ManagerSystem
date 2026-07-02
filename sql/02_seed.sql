@@ -14,15 +14,15 @@ INSERT INTO city(cityid, name, regionid, remark) VALUES
 (5, '北京', 3, '北方枢纽城市'),
 (6, '成都', 4, '西南航空物流中心');
 
-INSERT INTO goods(goodsid, name, category, brand, declared_price, remark) VALUES
-(1, '智能手表 X2', '电子产品', 'StarLink', 799.00, '高价值小件'),
-(2, '蓝牙耳机 Pro', '电子产品', 'SoundFox', 399.00, '易损需防震'),
-(3, '真丝围巾', '服饰', 'SilkWay', 168.00, '轻泡货'),
-(4, '咖啡豆 1kg', '食品', 'Andes', 96.00, '注意保质期'),
-(5, '机械键盘 K87', '电子产品', 'KeyLab', 529.00, '标准箱规'),
-(6, '运动鞋 Aero', '服饰', 'RunMax', 459.00, '热门商品'),
-(7, '护肤套装', '美妆', 'Lumi', 328.00, '避免高温'),
-(8, '车载充电器', '汽车用品', 'VoltGo', 129.00, '小件配件');
+INSERT INTO goods(goodsid, name, category, brand, declared_price, remark, image_url) VALUES
+(1, '智能手表 X2', '电子产品', 'StarLink', 799.00, '高价值小件', '/goods/electronics.svg'),
+(2, '蓝牙耳机 Pro', '电子产品', 'SoundFox', 399.00, '易损需防震', '/goods/electronics.svg'),
+(3, '真丝围巾', '服饰', 'SilkWay', 168.00, '轻泡货', '/goods/apparel.svg'),
+(4, '咖啡豆 1kg', '食品', 'Andes', 96.00, '注意保质期', '/goods/food.svg'),
+(5, '机械键盘 K87', '电子产品', 'KeyLab', 529.00, '标准箱规', '/goods/electronics.svg'),
+(6, '运动鞋 Aero', '服饰', 'RunMax', 459.00, '热门商品', '/goods/apparel.svg'),
+(7, '护肤套装', '美妆', 'Lumi', 328.00, '避免高温', '/goods/beauty.svg'),
+(8, '车载充电器', '汽车用品', 'VoltGo', 129.00, '小件配件', '/goods/auto.svg');
 
 INSERT INTO supplier(suppid, name, address, cityid, phone, remark) VALUES
 (1, '上海星链科技有限公司', '上海市浦东新区创新路88号', 1, '021-88008800', '电子产品供应商'),

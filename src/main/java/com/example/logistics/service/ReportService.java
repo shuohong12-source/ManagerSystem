@@ -16,15 +16,12 @@ import java.util.Map;
 @Service
 public class ReportService {
     private final ReportMapper reportMapper;
-
     public ReportService(ReportMapper reportMapper) {
         this.reportMapper = reportMapper;
     }
-
     public List<Map<String, Object>> monthly(String month) {
         return reportMapper.monthly(month);
     }
-
     public void exportMonthly(String month, OutputStream outputStream) throws IOException {
         List<Map<String, Object>> rows = monthly(month);
         try (Workbook workbook = new XSSFWorkbook()) {

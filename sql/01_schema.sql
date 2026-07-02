@@ -25,6 +25,7 @@ CREATE TABLE goods (
     brand VARCHAR(80),
     declared_price DECIMAL(12,2) NOT NULL,
     remark VARCHAR(255),
+    image_url VARCHAR(500),
     KEY idx_goods_category (category),
     KEY idx_goods_value (declared_price)
 ) ENGINE=InnoDB;

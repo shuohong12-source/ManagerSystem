@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -32,6 +33,7 @@ public class MasterDataController {
         model.addAttribute("editId", editId);
         model.addAttribute("editRow", editId == null ? Map.of() : masterDataService.findById(definition, editId));
         model.addAttribute("rowIdService", masterDataService);
+        model.addAttribute("cityMapRows", "cities".equals(type) ? masterDataService.findAll(definition, null) : List.of());
         return "master";
     }
     @PostMapping("/master/{type}/save")

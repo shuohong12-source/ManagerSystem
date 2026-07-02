@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 360" role="img" aria-label="汽车用品">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#f8fcff"/>
+      <stop offset=".58" stop-color="#e4f1fa"/>
+      <stop offset="1" stop-color="#d2e5f0"/>
+    </linearGradient>
+    <linearGradient id="car" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#2c7faf"/>
+      <stop offset="1" stop-color="#123d5a"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#18324b" flood-opacity=".22"/>
+    </filter>
+  </defs>
+  <rect width="720" height="360" rx="18" fill="url(#bg)"/>
+  <path d="M0 284 C128 222 208 306 344 250 C472 198 548 228 720 144 L720 360 L0 360 Z" fill="#d6e7f2"/>
+  <circle cx="590" cy="80" r="70" fill="#ffffff" opacity=".5"/>
+  <g filter="url(#shadow)">
+    <path d="M130 210 L190 128 L420 128 L512 210 Z" fill="url(#car)"/>
+    <rect x="96" y="190" width="462" height="82" rx="38" fill="#17324a"/>
+    <path d="M214 152 L392 152 L452 196 L164 196 Z" fill="#f8fbfd"/>
+    <circle cx="192" cy="270" r="38" fill="#f8fbfd"/>
+    <circle cx="192" cy="270" r="18" fill="#93b8ce"/>
+    <circle cx="460" cy="270" r="38" fill="#f8fbfd"/>
+    <circle cx="460" cy="270" r="18" fill="#93b8ce"/>
+    <rect x="124" y="216" width="74" height="16" rx="8" fill="#f6c15b"/>
+    <rect x="464" y="216" width="58" height="16" rx="8" fill="#b83a2f"/>
+  </g>
+  <g filter="url(#shadow)">
+    <circle cx="570" cy="132" r="42" fill="#0f8f7a"/>
+    <path d="M552 132 L588 132 M570 114 L570 150" stroke="#fff" stroke-width="12" stroke-linecap="round"/>
+  </g>
+</svg>

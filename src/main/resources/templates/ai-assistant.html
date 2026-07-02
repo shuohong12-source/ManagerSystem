@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AI助手</title>
+    <link rel="stylesheet" href="/app.css?v=ai-assistant-1">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand">智慧跨境物流供应链管理系统</div>
+    <nav class="nav">
+        <a href="/">BI看板</a>
+        <a href="/master/regions">基础数据</a>
+        <a href="/waybills">运单管理</a>
+        <a href="/recommendations">仓库推荐</a>
+        <a href="/reports/monthly">月度对账</a>
+        <a href="/ai">AI助手</a>
+    </nav>
+</header>
+<main class="container">
+    <div class="page-heading">
+        <div>
+            <h1 class="page-title">AI助手</h1>
+            <p class="page-subtitle">数据库问答与日常对话</p>
+        </div>
+    </div>
+
+    <section class="ai-shell">
+        <div class="ai-chat-panel">
+            <div class="ai-messages" id="aiMessages" aria-live="polite">
+                <article class="ai-message assistant">
+                    <div class="ai-avatar">AI</div>
+                    <div class="ai-bubble">你好，可以问我库存、商品、运单、仓库和对账，也可以直接聊天。</div>
+                </article>
+            </div>
+            <form class="ai-compose" id="aiForm">
+                <textarea id="aiInput" rows="3" placeholder="输入问题..." required></textarea>
+                <button type="submit">发送</button>
+            </form>
+        </div>
+
+        <aside class="ai-side-panel">
+            <h2>常用问题</h2>
+            <div class="ai-chip-list">
+                <button type="button" data-question="哪些库存低于安全库存？">低库存</button>
+                <button type="button" data-question="帮我统计最近运单状态分布">运单状态</button>
+                <button type="button" data-question="目前高价值商品有哪些？">高价值商品</button>
+                <button type="button" data-question="仓库和枢纽区域分别在哪里？">仓库区域</button>
+            </div>
+        </aside>
+    </section>
+</main>
+<script>
+    const aiForm = document.getElementById('aiForm');
+    const aiInput = document.getElementById('aiInput');
+    const aiMessages = document.getElementById('aiMessages');
+    const chips = document.querySelectorAll('.ai-chip-list button');
+
+    function appendMessage(role, text, mode) {
+        const article = document.createElement('article');
+        article.className = 'ai-message ' + role;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'ai-avatar';
+        avatar.textContent = role === 'user' ? '我' : 'AI';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'ai-bubble';
+        bubble.textContent = text;
+
+        if (mode) {
+            const badge = document.createElement('span');
+            badge.className = 'ai-mode';
+            badge.textContent = mode === 'database' || mode === 'database-fallback' ? '数据库' : mode === 'error' ? '异常' : '聊天';
+            bubble.appendChild(badge);
+        }
+
+        article.appendChild(avatar);
+        article.appendChild(bubble);
+        aiMessages.appendChild(article);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+        return article;
+    }
+
+    async function sendMessage(question) {
+        const text = question.trim();
+        if (!text) {
+            return;
+        }
+        appendMessage('user', text);
+        aiInput.value = '';
+        aiInput.disabled = true;
+        const pending = appendMessage('assistant', '正在思考...');
+        try {
+            const response = await fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: text})
+            });
+            const data = await response.json();
+            pending.remove();
+            appendMessage('assistant', data.answer || '没有返回内容。', data.mode);
+        } catch (error) {
+            pending.remove();
+            appendMessage('assistant', '请求失败：' + error.message, 'error');
+        } finally {
+            aiInput.disabled = false;
+            aiInput.focus();
+        }
+    }
+
+    aiForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        sendMessage(aiInput.value);
+    });
+
+    chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            sendMessage(chip.dataset.question || chip.textContent);
+        });
+    });
+</script>
+</body>
+</html>

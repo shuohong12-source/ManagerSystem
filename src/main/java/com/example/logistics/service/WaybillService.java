@@ -19,29 +19,22 @@ import java.util.Objects;
 public class WaybillService {
     private static final BigDecimal BASE_RATE = new BigDecimal("0.08");
     private static final BigDecimal TAX_RATE = new BigDecimal("0.06");
-
     private final WaybillMapper waybillMapper;
-
     public WaybillService(WaybillMapper waybillMapper) {
         this.waybillMapper = waybillMapper;
     }
-
     public List<Map<String, Object>> cities() {
         return waybillMapper.selectCities();
     }
-
     public List<Map<String, Object>> regions() {
         return waybillMapper.selectRegions();
     }
-
     public List<Map<String, Object>> goods() {
         return waybillMapper.selectGoods();
     }
-
     public List<Map<String, Object>> warehouses() {
         return waybillMapper.selectWarehouses();
     }
-
     public List<Map<String, Object>> search(String status, Long regionId, LocalDate start, LocalDate end) {
         return waybillMapper.search(
                 StringUtils.hasText(status) ? status : null,
@@ -50,7 +43,6 @@ public class WaybillService {
                 end == null ? null : end.plusDays(1).atStartOfDay()
         );
     }
-
     public Map<String, Object> waybill(Long waybillId) {
         Map<String, Object> waybill = waybillMapper.selectWaybill(waybillId);
         if (waybill == null || waybill.isEmpty()) {
@@ -58,15 +50,12 @@ public class WaybillService {
         }
         return waybill;
     }
-
     public List<Map<String, Object>> items(Long waybillId) {
         return waybillMapper.selectItems(waybillId);
     }
-
     public String status(Long waybillId) {
         return waybillMapper.selectStatus(waybillId);
     }
-
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public Long create(String priority, String clerk, Long destinationCityId, String remark,
                        List<Long> goodsIds, List<Long> warehouseIds, List<Integer> quantities) {
@@ -107,7 +96,6 @@ public class WaybillService {
         waybillMapper.updateWaybillFreight(waybillId, total);
         return waybillId;
     }
-
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public void changeStatus(Long waybillId, String targetStatus) {
         String current = waybillMapper.selectStatus(waybillId);
@@ -135,7 +123,6 @@ public class WaybillService {
         }
         waybillMapper.updateStatus(waybillId, targetStatus);
     }
-
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public void updateWaybill(Long waybillId, String priority, String clerk, Long destinationCityId, String remark) {
         waybill(waybillId);
@@ -150,7 +137,6 @@ public class WaybillService {
         waybillMapper.updateItemFreightsForPriority(waybillId, premiumRate(priority), TAX_RATE);
         refreshWaybillFreight(waybillId);
     }
-
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public void deleteWaybill(Long waybillId) {
         String current = waybillMapper.selectStatus(waybillId);
@@ -174,7 +160,6 @@ public class WaybillService {
             throw new IllegalStateException("运单不存在或已被删除");
         }
     }
-
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public void updateItem(Long waybillId, Long itemId, Long goodsId, Long whId, Integer quantity) {
         ensureEditable(waybillId);
@@ -207,7 +192,6 @@ public class WaybillService {
                 "出库冻结", null, "修改运单项重新冻结库存");
         refreshWaybillFreight(waybillId);
     }
-
     @Transactional(isolation = Isolation.READ_COMMITTED, rollbackFor = Exception.class)
     public void deleteItem(Long waybillId, Long itemId) {
         ensureEditable(waybillId);
@@ -229,7 +213,6 @@ public class WaybillService {
         }
         refreshWaybillFreight(waybillId);
     }
-
     private BigDecimal declaredPrice(Long goodsId) {
         BigDecimal declaredPrice = waybillMapper.selectDeclaredPrice(goodsId);
         if (declaredPrice == null) {
@@ -237,7 +220,6 @@ public class WaybillService {
         }
         return declaredPrice;
     }
-
     private BigDecimal premiumRate(String priority) {
         return switch (priority) {
             case "加急" -> new BigDecimal("0.20");
@@ -245,7 +227,6 @@ public class WaybillService {
             default -> BigDecimal.ZERO;
         };
     }
-
     private Freight freight(BigDecimal declaredPrice, int quantity, BigDecimal premiumRate) {
         BigDecimal amount = declaredPrice.multiply(BigDecimal.valueOf(quantity));
         BigDecimal base = amount.multiply(BASE_RATE).setScale(2, RoundingMode.HALF_UP);
@@ -254,7 +235,6 @@ public class WaybillService {
         BigDecimal line = base.add(premium).add(tax).setScale(2, RoundingMode.HALF_UP);
         return new Freight(base, line);
     }
-
     private void ensureEditable(Long waybillId) {
         String current = waybillMapper.selectStatus(waybillId);
         if (current == null) {
@@ -264,7 +244,6 @@ public class WaybillService {
             throw new IllegalStateException("已取消或已签收的运单不能修改明细");
         }
     }
-
     private Map<String, Object> item(Long waybillId, Long itemId) {
         Map<String, Object> item = waybillMapper.selectItem(waybillId, itemId);
         if (item == null || item.isEmpty()) {
@@ -272,19 +251,15 @@ public class WaybillService {
         }
         return item;
     }
-
     private void refreshWaybillFreight(Long waybillId) {
         waybillMapper.updateWaybillFreight(waybillId, waybillMapper.sumItemFreight(waybillId));
     }
-
     private Long longValue(Object value) {
         return ((Number) value).longValue();
     }
-
     private int intValue(Object value) {
         return ((Number) value).intValue();
     }
-
     private record Freight(BigDecimal baseFreight, BigDecimal lineFreight) {
     }
 }

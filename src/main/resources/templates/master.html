@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title th:text="${definition.title} + '维护'">基础数据</title>
-    <link rel="stylesheet" href="/app.css">
+    <link rel="stylesheet" href="/app.css?v=goods-card-3">
 </head>
 <body>
 <header class="topbar">
@@ -15,6 +15,7 @@
         <a href="/waybills">运单管理</a>
         <a href="/recommendations">仓库推荐</a>
         <a href="/reports/monthly">月度对账</a>
+        <a href="/ai">AI助手</a>
     </nav>
 </header>
 <main class="container">
@@ -25,12 +26,39 @@
     <div th:if="${success}" class="message success" th:text="${success}"></div>
     <div th:if="${error}" class="message error" th:text="${error}"></div>
 
+    <section th:if="${definition.type == 'regions'}" class="panel hub-map-panel">
+        <div class="panel-head">
+            <div>
+                <h2>枢纽区域地图</h2>
+                <p>区域覆盖与基础档案联动</p>
+            </div>
+        </div>
+        <div class="hub-map-layout">
+            <div class="hub-map-stage" id="hubRegionMap" aria-label="枢纽区域地图"></div>
+            <aside class="hub-detail-card" id="hubRegionDetail" aria-live="polite"></aside>
+        </div>
+    </section>
+
+    <section th:if="${definition.type == 'cities'}" class="panel hub-map-panel city-map-panel">
+        <div class="panel-head">
+            <div>
+                <h2>城市枢纽地图</h2>
+                <p>点击枢纽区域后查看区域内城市</p>
+            </div>
+            <button type="button" class="button secondary city-map-back" id="cityMapBack">总览</button>
+        </div>
+        <div class="hub-map-layout">
+            <div class="hub-map-stage city-map-stage" id="cityHubMap" aria-label="城市枢纽地图"></div>
+            <aside class="hub-detail-card city-map-detail" id="cityHubDetail" aria-live="polite"></aside>
+        </div>
+    </section>
+
     <section class="panel">
         <h2 th:text="${editId == null ? '新增' : '编辑'} + ${definition.title}">新增</h2>
         <form th:action="@{'/master/' + ${definition.type} + '/save'}" method="post">
             <input type="hidden" name="_editId" th:value="${editId}">
             <div class="form-grid">
-                <label th:each="field : ${definition.fields}" th:classappend="${field.name == 'remark'} ? 'form-wide'">
+                <label th:each="field : ${definition.fields}" th:classappend="${field.name == 'remark' or field.name == 'image_url'} ? 'form-wide'">
                     <span th:text="${field.label}">字段</span>
                     <select th:if="${field.type == 'select'}" th:name="${field.name}" th:required="${field.required}" th:disabled="${editId != null and definition.idColumns.contains(field.name)}">
                         <option value="">请选择</option>
@@ -61,7 +89,41 @@
             </label>
             <button type="submit">查询</button>
         </form>
-        <table>
+        <div th:if="${definition.type == 'goods'}" class="goods-card-grid">
+            <article th:each="row : ${rows}" class="goods-card">
+                <div class="goods-card-media">
+                    <img th:with="fallbackImage=${#strings.contains(row['category'] ?: '', '电子') ? '/goods/electronics.svg' :
+                                                (#strings.contains(row['category'] ?: '', '服饰') ? '/goods/apparel.svg' :
+                                                (#strings.contains(row['category'] ?: '', '食品') ? '/goods/food.svg' :
+                                                (#strings.contains(row['category'] ?: '', '美妆') ? '/goods/beauty.svg' :
+                                                (#strings.contains(row['category'] ?: '', '汽车') ? '/goods/auto.svg' : '/goods/default.svg'))))}"
+                         th:src="${#strings.isEmpty(row['image_url']) ? fallbackImage : row['image_url']}"
+                         th:alt="${row['name'] ?: '商品图片'}">
+                </div>
+                <div class="goods-card-main">
+                    <div class="goods-card-kicker" th:text="${row['category'] ?: '未分类'}">电子产品</div>
+                    <h3 th:text="${row['name']}">商品名称</h3>
+                    <div class="goods-card-brand" th:text="${row['brand'] ?: '暂无品牌'}">品牌</div>
+                </div>
+                <div class="goods-card-price">
+                    <span>申报单价</span>
+                    <strong th:text="${row['declared_price']}">129.00</strong>
+                </div>
+                <div class="goods-card-note">
+                    <span>备注</span>
+                    <p th:text="${row['remark'] ?: '暂无备注'}">备注</p>
+                </div>
+                <div class="goods-card-actions">
+                    <a class="button secondary" th:href="@{'/master/' + ${definition.type} + '?editId=' + ${rowIdService.rowId(definition,row)}}">编辑</a>
+                    <form th:action="@{'/master/' + ${definition.type} + '/delete'}" method="post" onsubmit="return confirm('确认删除该记录？')">
+                        <input type="hidden" name="id" th:value="${rowIdService.rowId(definition,row)}">
+                        <button class="danger" type="submit">删除</button>
+                    </form>
+                </div>
+            </article>
+            <div th:if="${#lists.isEmpty(rows)}" class="goods-card-empty">暂无数据</div>
+        </div>
+        <table th:unless="${definition.type == 'goods'}">
             <thead>
             <tr>
                 <th th:each="field : ${definition.fields}" th:text="${field.label}">字段</th>
@@ -69,7 +131,21 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="row : ${rows}">
+            <tr th:each="row : ${rows}"
+                th:if="${definition.type == 'inventory'}"
+                th:classappend="${row['quantity'] <= row['frozen_quantity']} ? 'inventory-row-frozen' : (${row['quantity'] <= row['safety_stock']} ? 'inventory-row-low' : 'inventory-row-ok')">
+                <td th:each="field : ${definition.fields}" th:text="${rowIdService.displayValue(field, row, options)}">值</td>
+                <td>
+                    <div class="actions">
+                        <a class="button secondary" th:href="@{'/master/' + ${definition.type} + '?editId=' + ${rowIdService.rowId(definition,row)}}">编辑</a>
+                        <form th:action="@{'/master/' + ${definition.type} + '/delete'}" method="post" onsubmit="return confirm('确认删除该记录？')">
+                            <input type="hidden" name="id" th:value="${rowIdService.rowId(definition,row)}">
+                            <button class="danger" type="submit">删除</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            <tr th:each="row : ${rows}" th:unless="${definition.type == 'inventory'}">
                 <td th:each="field : ${definition.fields}" th:text="${rowIdService.displayValue(field, row, options)}">值</td>
                 <td>
                     <div class="actions">
@@ -86,5 +162,815 @@
         </table>
     </section>
 </main>
+<script th:if="${definition.type == 'regions'}" th:inline="javascript">
+    window.masterRegionRows = /*[[${rows}]]*/ [];
+</script>
+<script th:if="${definition.type == 'regions'}">
+    (function () {
+        const rows = window.masterRegionRows || [];
+        const mapEl = document.getElementById("hubRegionMap");
+        const detailEl = document.getElementById("hubRegionDetail");
+        if (!mapEl || !detailEl) return;
+
+        const layouts = [
+            {
+                key: "华北",
+                path: "M352 58 L450 44 L548 86 L588 142 L534 194 L422 184 L338 128 Z",
+                label: { x: 462, y: 124 }
+            },
+            {
+                key: "华东",
+                path: "M386 236 L502 220 L594 278 L554 354 L438 382 L366 326 Z",
+                label: { x: 478, y: 304 }
+            },
+            {
+                key: "华南",
+                path: "M126 318 L244 292 L350 330 L364 386 L274 416 L146 390 L84 346 Z",
+                label: { x: 232, y: 360 }
+            },
+            {
+                key: "西南",
+                path: "M64 188 L136 156 L254 164 L326 220 L292 282 L174 310 L78 266 Z",
+                label: { x: 184, y: 236 }
+            }
+        ];
+        const fallbackLayouts = [
+            { path: "M52 54 L142 38 L236 62 L260 118 L204 152 L92 144 L34 98 Z", label: { x: 146, y: 101 } },
+            { path: "M274 58 L326 40 L390 56 L410 106 L366 146 L294 136 L252 94 Z", label: { x: 334, y: 96 } },
+            { path: "M414 28 L514 24 L606 58 L620 114 L560 154 L448 144 L398 86 Z", label: { x: 516, y: 90 } },
+            { path: "M408 166 L516 158 L604 204 L584 252 L482 272 L398 228 Z", label: { x: 500, y: 216 } }
+        ];
+        const provinceLayouts = {
+            north: {
+                path: "M284 66 L372 42 L514 74 L520 135 L432 166 L332 154 L262 135 Z",
+                label: { x: 392, y: 112 }
+            },
+            east: {
+                path: "M432 166 L520 135 L520 230 L574 236 L612 306 L510 370 L430 350 L362 282 L448 240 Z",
+                label: { x: 504, y: 276 }
+            },
+            south: {
+                path: "M275 250 L362 282 L430 350 L510 370 L354 386 L248 354 Z",
+                label: { x: 358, y: 344 }
+            },
+            southwest: {
+                path: "M42 152 L70 204 L48 298 L118 374 L248 354 L275 250 L170 160 L92 190 Z",
+                label: { x: 150, y: 266 }
+            },
+            central: {
+                path: "M262 135 L332 154 L432 166 L448 240 L362 282 L275 250 L170 160 Z",
+                label: { x: 318, y: 214 }
+            },
+            northwest: {
+                path: "M78 92 L164 58 L284 66 L262 135 L170 160 L92 190 L42 152 Z",
+                label: { x: 164, y: 120 }
+            },
+            northeast: {
+                path: "M514 74 L592 142 L574 236 L520 230 L520 135 Z",
+                label: { x: 548, y: 164 }
+            }
+        };
+        const organicLayouts = [
+            provinceLayouts.central,
+            provinceLayouts.southwest,
+            provinceLayouts.north,
+            provinceLayouts.east,
+            provinceLayouts.south,
+            provinceLayouts.northwest,
+            provinceLayouts.northeast
+        ];
+        let activeIndex = 0;
+        let currentRegionRows = [];
+
+        function value(row, key) {
+            return row[key] ?? row[key.toUpperCase()] ?? row[key.toLowerCase()] ?? "";
+        }
+
+        function escapeHtml(text) {
+            return String(text ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        function regionSortNumber(row) {
+            const raw = value(row, "regionid") || value(row, "id");
+            const number = Number(raw);
+            return Number.isFinite(number) ? number : Number.MAX_SAFE_INTEGER;
+        }
+
+        function regionSortLabel(row) {
+            return String(value(row, "name") || value(row, "label") || "");
+        }
+
+        function sortedRegions(list) {
+            return [...list].sort((a, b) => {
+                const numberDiff = regionSortNumber(a) - regionSortNumber(b);
+                if (numberDiff !== 0) return numberDiff;
+                return regionSortLabel(a).localeCompare(regionSortLabel(b), "zh-CN");
+            });
+        }
+
+        function regionDirection(row) {
+            const name = String(value(row, "name") || value(row, "label") || "");
+            if (/华北|北方|北京|天津|河北|山西|内蒙/.test(name)) return "north";
+            if (/华东|东部|上海|杭州|宁波|江苏|浙江|安徽|福建|山东/.test(name)) return "east";
+            if (/华南|南方|广州|深圳|香港|澳门|广东|广西|海南/.test(name)) return "south";
+            if (/西南|成都|重庆|四川|云南|贵州|西藏/.test(name)) return "southwest";
+            if (/华中|中部|武汉|长沙|郑州|湖北|湖南|河南|江西/.test(name)) return "central";
+            if (/西北|新疆|甘肃|青海|宁夏|陕西/.test(name)) return "northwest";
+            if (/东北|辽宁|吉林|黑龙江|沈阳|大连/.test(name)) return "northeast";
+            return "";
+        }
+
+        function layoutFor(row, index, total) {
+            const direction = regionDirection(row);
+            if (direction && provinceLayouts[direction]) return provinceLayouts[direction];
+            return organicLayouts[index % organicLayouts.length] || gridLayout(index, total);
+        }
+
+        function firstAvailableLayout(usedDirections, fallbackIndex) {
+            const fallbackOrder = ["central", "northwest", "northeast", "southwest", "north", "east", "south"];
+            const key = fallbackOrder.find(direction => !usedDirections.has(direction)) || fallbackOrder[fallbackIndex % fallbackOrder.length];
+            usedDirections.add(key);
+            return provinceLayouts[key];
+        }
+
+        function buildRegionItems(list) {
+            const usedDirections = new Set(list.map(regionDirection).filter(Boolean));
+            let fallbackIndex = 0;
+            return list.map((row, index) => {
+                const direction = regionDirection(row);
+                const layout = direction && provinceLayouts[direction]
+                    ? provinceLayouts[direction]
+                    : firstAvailableLayout(usedDirections, fallbackIndex++);
+                return { row, index, layout: layout || gridLayout(index, list.length) };
+            });
+        }
+
+        function gridLayout(index, total) {
+            const count = Math.max(total, 1);
+            const cols = count <= 1 ? 1 : count <= 4 ? 2 : count <= 9 ? 3 : 4;
+            const rowsCount = Math.ceil(count / cols);
+            const padX = 30;
+            const padY = 28;
+            const cellW = (640 - padX * 2) / cols;
+            const cellH = (420 - padY * 2) / rowsCount;
+            const col = index % cols;
+            const row = Math.floor(index / cols);
+            const x0 = padX + cellW * col;
+            const x1 = padX + cellW * (col + 1);
+            const y0 = padY + cellH * row;
+            const y1 = padY + cellH * (row + 1);
+            const cx = (x0 + x1) / 2;
+            const cy = (y0 + y1) / 2;
+            const wiggle = Math.min(cellW, cellH) * 0.12;
+            const n = number => Number(number).toFixed(1);
+            function wave(seed, step) {
+                return ((seed * 37 + step * 19) % 3 - 1) * wiggle;
+            }
+            function hPoint(boundaryRow, cellCol, t, step) {
+                const baseY = padY + cellH * boundaryRow;
+                const offset = boundaryRow === 0 || boundaryRow === rowsCount ? wave(cellCol + boundaryRow + 2, step) * 0.35 : wave(boundaryRow * 11 + cellCol, step);
+                return `${n(padX + cellW * (cellCol + t))} ${n(baseY + offset)}`;
+            }
+            function vPoint(boundaryCol, cellRow, t, step) {
+                const baseX = padX + cellW * boundaryCol;
+                const offset = boundaryCol === 0 || boundaryCol === cols ? wave(cellRow + boundaryCol + 3, step) * 0.35 : wave(boundaryCol * 13 + cellRow, step);
+                return `${n(baseX + offset)} ${n(padY + cellH * (cellRow + t))}`;
+            }
+            return {
+                path: `M${n(x0)} ${n(y0)}
+                       L${hPoint(row, col, 0.34, 1)}
+                       L${hPoint(row, col, 0.68, 2)}
+                       L${n(x1)} ${n(y0)}
+                       L${vPoint(col + 1, row, 0.35, 3)}
+                       L${vPoint(col + 1, row, 0.7, 4)}
+                       L${n(x1)} ${n(y1)}
+                       L${hPoint(row + 1, col, 0.68, 2)}
+                       L${hPoint(row + 1, col, 0.34, 1)}
+                       L${n(x0)} ${n(y1)}
+                       L${vPoint(col, row, 0.7, 4)}
+                       L${vPoint(col, row, 0.35, 3)} Z`,
+                label: { x: Math.round(cx), y: Math.round(cy + 5) }
+            };
+        }
+
+        function routeHtmlFor(items) {
+            return "";
+        }
+
+        function mapMask(id) {
+            const outline = "M78 92 L164 58 L284 66 L372 42 L514 74 L592 142 L574 236 L612 306 L510 370 L354 386 L248 354 L118 374 L48 298 L70 204 L42 152 Z";
+            return `
+                <defs>
+                    <clipPath id="${id}">
+                        <path d="${outline}"></path>
+                    </clipPath>
+                </defs>
+                <path class="hub-map-outline" d="${outline}"></path>`;
+        }
+
+        function renderMap() {
+            currentRegionRows = sortedRegions(rows);
+            if (activeIndex >= currentRegionRows.length) activeIndex = 0;
+            const regions = buildRegionItems(currentRegionRows);
+            const groups = regions.map(item => {
+                const name = escapeHtml(value(item.row, "name") || "未命名区域");
+                const activeClass = item.index === activeIndex ? " active" : "";
+                return `
+                    <g class="hub-map-region${activeClass}" tabindex="0" role="button" data-index="${item.index}" aria-label="${name}">
+                        <path d="${item.layout.path}" fill="${item.index === activeIndex ? "#1d5f8f" : regionFill(item.index)}" stroke="#fff" stroke-width="4"></path>
+                        <text x="${item.layout.label.x}" y="${item.layout.label.y}" text-anchor="middle" fill="${item.index === activeIndex ? "#fff" : "#17324a"}">${name}</text>
+                    </g>`;
+            }).join("");
+            mapEl.innerHTML = `
+                <svg viewBox="0 0 640 420" role="img" aria-label="枢纽区域示意图">
+                    ${mapMask("regionMapClip")}
+                    <g clip-path="url(#regionMapClip)">
+                        ${groups}
+                    </g>
+                </svg>`;
+            mapEl.querySelectorAll(".hub-map-region").forEach(region => {
+                region.addEventListener("click", () => selectRegion(Number(region.dataset.index)));
+                region.addEventListener("keydown", event => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        selectRegion(Number(region.dataset.index));
+                    }
+                });
+            });
+        }
+
+        function regionFill(index) {
+            return ["#d6e7f2", "#d9eadf", "#f3e1ba", "#ead3cf"][index % 4];
+        }
+
+        function renderDetail() {
+            const row = currentRegionRows[activeIndex] || {};
+            const id = value(row, "regionid");
+            const name = value(row, "name") || "暂无区域";
+            const remark = value(row, "remark") || "暂无备注";
+            detailEl.innerHTML = `
+                <div class="hub-detail-kicker">区域详情</div>
+                <h3>${escapeHtml(name)}</h3>
+                <dl>
+                    <div><dt>区域编号</dt><dd>${escapeHtml(id || "-")}</dd></div>
+                    <div><dt>覆盖方向</dt><dd>${escapeHtml(remark)}</dd></div>
+                </dl>
+                ${id ? `<a class="button secondary" href="/master/regions?editId=${encodeURIComponent(id)}">编辑区域</a>` : ""}`;
+        }
+
+        function selectRegion(index) {
+            activeIndex = index;
+            renderMap();
+            renderDetail();
+        }
+
+        if (rows.length) {
+            renderMap();
+            renderDetail();
+        } else {
+            mapEl.innerHTML = '<div class="hub-map-empty">暂无区域数据</div>';
+            detailEl.innerHTML = '<div class="hub-detail-kicker">区域详情</div><h3>暂无区域</h3>';
+        }
+    })();
+</script>
+<script th:if="${definition.type == 'cities'}" th:inline="javascript">
+    window.masterCityRows = /*[[${cityMapRows}]]*/ [];
+    window.masterRegionOptions = /*[[${options['regions']}]]*/ [];
+</script>
+<script th:if="${definition.type == 'cities'}">
+    (function () {
+        const mapEl = document.getElementById("cityHubMap");
+        const detailEl = document.getElementById("cityHubDetail");
+        const backButton = document.getElementById("cityMapBack");
+        const regionSelect = document.querySelector('select[name="regionid"]');
+        if (!mapEl || !detailEl) return;
+
+        const layouts = [
+            {
+                key: "华北",
+                path: "M352 58 L450 44 L548 86 L588 142 L534 194 L422 184 L338 128 Z",
+                label: { x: 462, y: 124 }
+            },
+            {
+                key: "华东",
+                path: "M386 236 L502 220 L594 278 L554 354 L438 382 L366 326 Z",
+                label: { x: 478, y: 304 }
+            },
+            {
+                key: "华南",
+                path: "M126 318 L244 292 L350 330 L364 386 L274 416 L146 390 L84 346 Z",
+                label: { x: 232, y: 360 }
+            },
+            {
+                key: "西南",
+                path: "M64 188 L136 156 L254 164 L326 220 L292 282 L174 310 L78 266 Z",
+                label: { x: 184, y: 236 }
+            }
+        ];
+        const fallbackLayouts = [
+            { path: "M52 54 L142 38 L236 62 L260 118 L204 152 L92 144 L34 98 Z", label: { x: 146, y: 101 } },
+            { path: "M274 58 L326 40 L390 56 L410 106 L366 146 L294 136 L252 94 Z", label: { x: 334, y: 96 } },
+            { path: "M414 28 L514 24 L606 58 L620 114 L560 154 L448 144 L398 86 Z", label: { x: 516, y: 90 } },
+            { path: "M408 166 L516 158 L604 204 L584 252 L482 272 L398 228 Z", label: { x: 500, y: 216 } }
+        ];
+        const provinceLayouts = {
+            north: {
+                path: "M284 66 L372 42 L514 74 L520 135 L432 166 L332 154 L262 135 Z",
+                label: { x: 392, y: 112 }
+            },
+            east: {
+                path: "M432 166 L520 135 L520 230 L574 236 L612 306 L510 370 L430 350 L362 282 L448 240 Z",
+                label: { x: 504, y: 276 }
+            },
+            south: {
+                path: "M275 250 L362 282 L430 350 L510 370 L354 386 L248 354 Z",
+                label: { x: 358, y: 344 }
+            },
+            southwest: {
+                path: "M42 152 L70 204 L48 298 L118 374 L248 354 L275 250 L170 160 L92 190 Z",
+                label: { x: 150, y: 266 }
+            },
+            central: {
+                path: "M262 135 L332 154 L432 166 L448 240 L362 282 L275 250 L170 160 Z",
+                label: { x: 318, y: 214 }
+            },
+            northwest: {
+                path: "M78 92 L164 58 L284 66 L262 135 L170 160 L92 190 L42 152 Z",
+                label: { x: 164, y: 120 }
+            },
+            northeast: {
+                path: "M514 74 L592 142 L574 236 L520 230 L520 135 Z",
+                label: { x: 548, y: 164 }
+            }
+        };
+        const organicLayouts = [
+            provinceLayouts.central,
+            provinceLayouts.southwest,
+            provinceLayouts.north,
+            provinceLayouts.east,
+            provinceLayouts.south,
+            provinceLayouts.northwest,
+            provinceLayouts.northeast
+        ];
+        const tableData = readCityTable();
+        const selectRegions = readRegionSelect();
+        const cities = tableData.cities.length ? tableData.cities : normalizeCityRows(window.masterCityRows || [], selectRegions);
+        const regions = sortedRegions(mergeRegions(tableData.regions, selectRegions, cities));
+        let activeRegionId = "";
+
+        function value(row, key) {
+            return row[key] ?? row[key.toUpperCase()] ?? row[key.toLowerCase()] ?? "";
+        }
+
+        function escapeHtml(text) {
+            return String(text ?? "")
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#39;");
+        }
+
+        function regionId(region) {
+            return String(value(region, "id"));
+        }
+
+        function regionLabel(region) {
+            return value(region, "label") || "未命名枢纽";
+        }
+
+        function regionSortNumber(region) {
+            const number = Number(regionId(region));
+            return Number.isFinite(number) ? number : Number.MAX_SAFE_INTEGER;
+        }
+
+        function sortedRegions(list) {
+            return [...list].sort((a, b) => {
+                const numberDiff = regionSortNumber(a) - regionSortNumber(b);
+                if (numberDiff !== 0) return numberDiff;
+                return regionLabel(a).localeCompare(regionLabel(b), "zh-CN");
+            });
+        }
+
+        function readRegionSelect() {
+            if (!regionSelect) return [];
+            return Array.from(regionSelect.options)
+                .filter(option => option.value)
+                .map(option => ({ id: option.value, label: option.textContent.trim() }));
+        }
+
+        function readCityTable() {
+            const result = { cities: [], regions: [] };
+            document.querySelectorAll("section.panel table tbody tr").forEach(row => {
+                const cells = Array.from(row.querySelectorAll("td"));
+                if (cells.length < 3 || cells[0].hasAttribute("colspan")) return;
+                const cityName = cells[0].textContent.trim();
+                const regionName = cells[1].textContent.trim();
+                const remark = cells[2].textContent.trim();
+                if (!cityName || !regionName) return;
+                let region = result.regions.find(item => item.label === regionName);
+                if (!region) {
+                    const selectMatch = readRegionSelect().find(item => item.label === regionName);
+                    region = { id: selectMatch ? selectMatch.id : regionName, label: regionName };
+                    result.regions.push(region);
+                }
+                result.cities.push({ name: cityName, regionid: region.id, regionLabel: regionName, remark });
+            });
+            return result;
+        }
+
+        function normalizeCityRows(rows, regionList) {
+            return rows.map(row => {
+                const id = String(value(row, "regionid"));
+                const region = regionList.find(item => String(item.id) === id);
+                return {
+                    name: value(row, "name"),
+                    regionid: id,
+                    regionLabel: region ? region.label : "",
+                    remark: value(row, "remark")
+                };
+            });
+        }
+
+        function mergeRegions(tableRegions, selectRegionList, cityList) {
+            const result = [];
+            tableRegions.forEach(region => pushRegion(result, region));
+            selectRegionList.forEach(region => pushRegion(result, region));
+            return result.length ? result : selectRegionList;
+        }
+
+        function pushRegion(target, region) {
+            if (!region || !region.label || target.some(item => item.label === region.label)) return;
+            target.push({ id: String(region.id || region.label), label: region.label });
+        }
+
+        function regionDirection(region) {
+            const name = String(regionLabel(region));
+            if (/华北|北方|北京|天津|河北|山西|内蒙/.test(name)) return "north";
+            if (/华东|东部|上海|杭州|宁波|江苏|浙江|安徽|福建|山东/.test(name)) return "east";
+            if (/华南|南方|广州|深圳|香港|澳门|广东|广西|海南/.test(name)) return "south";
+            if (/西南|成都|重庆|四川|云南|贵州|西藏/.test(name)) return "southwest";
+            if (/华中|中部|武汉|长沙|郑州|湖北|湖南|河南|江西/.test(name)) return "central";
+            if (/西北|新疆|甘肃|青海|宁夏|陕西/.test(name)) return "northwest";
+            if (/东北|辽宁|吉林|黑龙江|沈阳|大连/.test(name)) return "northeast";
+            return "";
+        }
+
+        function layoutFor(region, index, total) {
+            const direction = regionDirection(region);
+            if (direction && provinceLayouts[direction]) return provinceLayouts[direction];
+            return organicLayouts[index % organicLayouts.length] || gridLayout(index, total);
+        }
+
+        function firstAvailableLayout(usedDirections, fallbackIndex) {
+            const fallbackOrder = ["central", "northwest", "northeast", "southwest", "north", "east", "south"];
+            const key = fallbackOrder.find(direction => !usedDirections.has(direction)) || fallbackOrder[fallbackIndex % fallbackOrder.length];
+            usedDirections.add(key);
+            return provinceLayouts[key];
+        }
+
+        function buildRegionItems(list) {
+            const usedDirections = new Set(list.map(regionDirection).filter(Boolean));
+            let fallbackIndex = 0;
+            return list.map((region, index) => {
+                const direction = regionDirection(region);
+                const layout = direction && provinceLayouts[direction]
+                    ? provinceLayouts[direction]
+                    : firstAvailableLayout(usedDirections, fallbackIndex++);
+                return { region, index, layout: layout || gridLayout(index, list.length) };
+            });
+        }
+
+        function gridLayout(index, total) {
+            const count = Math.max(total, 1);
+            const cols = count <= 1 ? 1 : count <= 4 ? 2 : count <= 9 ? 3 : 4;
+            const rowsCount = Math.ceil(count / cols);
+            const padX = 30;
+            const padY = 28;
+            const cellW = (640 - padX * 2) / cols;
+            const cellH = (420 - padY * 2) / rowsCount;
+            const col = index % cols;
+            const row = Math.floor(index / cols);
+            const x0 = padX + cellW * col;
+            const x1 = padX + cellW * (col + 1);
+            const y0 = padY + cellH * row;
+            const y1 = padY + cellH * (row + 1);
+            const cx = (x0 + x1) / 2;
+            const cy = (y0 + y1) / 2;
+            const wiggle = Math.min(cellW, cellH) * 0.12;
+            const n = number => Number(number).toFixed(1);
+            function wave(seed, step) {
+                return ((seed * 37 + step * 19) % 3 - 1) * wiggle;
+            }
+            function hPoint(boundaryRow, cellCol, t, step) {
+                const baseY = padY + cellH * boundaryRow;
+                const offset = boundaryRow === 0 || boundaryRow === rowsCount ? wave(cellCol + boundaryRow + 2, step) * 0.35 : wave(boundaryRow * 11 + cellCol, step);
+                return `${n(padX + cellW * (cellCol + t))} ${n(baseY + offset)}`;
+            }
+            function vPoint(boundaryCol, cellRow, t, step) {
+                const baseX = padX + cellW * boundaryCol;
+                const offset = boundaryCol === 0 || boundaryCol === cols ? wave(cellRow + boundaryCol + 3, step) * 0.35 : wave(boundaryCol * 13 + cellRow, step);
+                return `${n(baseX + offset)} ${n(padY + cellH * (cellRow + t))}`;
+            }
+            return {
+                path: `M${n(x0)} ${n(y0)}
+                       L${hPoint(row, col, 0.34, 1)}
+                       L${hPoint(row, col, 0.68, 2)}
+                       L${n(x1)} ${n(y0)}
+                       L${vPoint(col + 1, row, 0.35, 3)}
+                       L${vPoint(col + 1, row, 0.7, 4)}
+                       L${n(x1)} ${n(y1)}
+                       L${hPoint(row + 1, col, 0.68, 2)}
+                       L${hPoint(row + 1, col, 0.34, 1)}
+                       L${n(x0)} ${n(y1)}
+                       L${vPoint(col, row, 0.7, 4)}
+                       L${vPoint(col, row, 0.35, 3)} Z`,
+                label: { x: Math.round(cx), y: Math.round(cy + 5) }
+            };
+        }
+
+        function routeHtmlFor(items) {
+            return "";
+        }
+
+        function mapMask(id) {
+            const outline = "M78 92 L164 58 L284 66 L372 42 L514 74 L592 142 L574 236 L612 306 L510 370 L354 386 L248 354 L118 374 L48 298 L70 204 L42 152 Z";
+            return `
+                <defs>
+                    <clipPath id="${id}">
+                        <path d="${outline}"></path>
+                    </clipPath>
+                </defs>
+                <path class="hub-map-outline" d="${outline}"></path>`;
+        }
+
+        function pathPoints(path) {
+            const points = [];
+            path.replace(/[ML]\s*([-0-9.]+)\s+([-0-9.]+)/g, (match, x, y) => {
+                points.push({ x: Number(x), y: Number(y) });
+                return match;
+            });
+            return points;
+        }
+
+        function pointBounds(points) {
+            const minX = Math.min(...points.map(point => point.x));
+            const maxX = Math.max(...points.map(point => point.x));
+            const minY = Math.min(...points.map(point => point.y));
+            const maxY = Math.max(...points.map(point => point.y));
+            return { minX, maxX, minY, maxY, width: maxX - minX, height: maxY - minY };
+        }
+
+        function fitLayout(layout, target) {
+            const points = pathPoints(layout.path);
+            if (!points.length) return { path: layout.path, points: [], bounds: target, label: layout.label || { x: 320, y: 210 } };
+            const source = pointBounds(points);
+            const scale = Math.min(target.width / Math.max(source.width, 1), target.height / Math.max(source.height, 1));
+            const usedW = source.width * scale;
+            const usedH = source.height * scale;
+            const offsetX = target.x + (target.width - usedW) / 2;
+            const offsetY = target.y + (target.height - usedH) / 2;
+            function transform(point) {
+                return {
+                    x: offsetX + (point.x - source.minX) * scale,
+                    y: offsetY + (point.y - source.minY) * scale
+                };
+            }
+            const fittedPoints = points.map(transform);
+            const fallbackLabel = { x: (source.minX + source.maxX) / 2, y: (source.minY + source.maxY) / 2 };
+            return {
+                path: fittedPoints.map((point, index) => `${index === 0 ? "M" : "L"}${point.x.toFixed(1)} ${point.y.toFixed(1)}`).join(" ") + " Z",
+                points: fittedPoints,
+                bounds: pointBounds(fittedPoints),
+                label: transform(layout.label || fallbackLabel)
+            };
+        }
+
+        function fitPath(path, target) {
+            return fitLayout({ path }, target).path;
+        }
+
+        function pointInPolygon(point, polygon) {
+            let inside = false;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                const xi = polygon[i].x;
+                const yi = polygon[i].y;
+                const xj = polygon[j].x;
+                const yj = polygon[j].y;
+                const intersects = ((yi > point.y) !== (yj > point.y))
+                    && (point.x < (xj - xi) * (point.y - yi) / (yj - yi || 0.0001) + xi);
+                if (intersects) inside = !inside;
+            }
+            return inside;
+        }
+
+        function clampPoint(point, bounds, inset) {
+            return {
+                x: Math.min(bounds.maxX - inset, Math.max(bounds.minX + inset, point.x)),
+                y: Math.min(bounds.maxY - inset, Math.max(bounds.minY + inset, point.y))
+            };
+        }
+
+        function interiorPoint(preferred, polygon, bounds, inset) {
+            const clamped = clampPoint(preferred, bounds, inset);
+            if (pointInPolygon(clamped, polygon)) return clamped;
+            for (let row = 0; row < 6; row++) {
+                for (let col = 0; col < 7; col++) {
+                    const point = {
+                        x: bounds.minX + inset + (bounds.width - inset * 2) * (col + 0.5) / 7,
+                        y: bounds.minY + inset + (bounds.height - inset * 2) * (row + 0.5) / 6
+                    };
+                    if (pointInPolygon(point, polygon)) return point;
+                }
+            }
+            return clamped;
+        }
+
+        function pinFits(point, polygon, titlePoint, used) {
+            const checks = [
+                point,
+                { x: point.x, y: point.y + 34 },
+                { x: point.x - 34, y: point.y + 24 },
+                { x: point.x + 34, y: point.y + 24 }
+            ];
+            const awayFromTitle = Math.hypot(point.x - titlePoint.x, point.y - titlePoint.y) > 68;
+            const awayFromPins = used.every(item => Math.hypot(point.x - item.x, point.y - item.y) > 64);
+            return awayFromTitle && awayFromPins && checks.every(check => pointInPolygon(check, polygon));
+        }
+
+        function cityInteriorPoints(count, polygon, bounds, titlePoint) {
+            const result = [];
+            const fractions = [
+                [0.34, 0.46], [0.62, 0.46], [0.48, 0.62], [0.28, 0.64],
+                [0.70, 0.64], [0.42, 0.78], [0.58, 0.78], [0.24, 0.34],
+                [0.76, 0.34], [0.50, 0.34]
+            ];
+            for (let index = 0; index < count; index++) {
+                let picked = null;
+                const ordered = fractions.slice(index).concat(fractions.slice(0, index));
+                for (const item of ordered) {
+                    const point = {
+                        x: bounds.minX + bounds.width * item[0],
+                        y: bounds.minY + bounds.height * item[1]
+                    };
+                    if (pinFits(point, polygon, titlePoint, result)) {
+                        picked = point;
+                        break;
+                    }
+                }
+                if (!picked) {
+                    picked = interiorPoint({
+                        x: bounds.minX + bounds.width * (0.35 + (index % 3) * 0.15),
+                        y: Math.max(titlePoint.y + 70, bounds.minY + bounds.height * 0.52)
+                    }, polygon, bounds, 42);
+                }
+                result.push(picked);
+            }
+            return result;
+        }
+
+        function regionCities(id) {
+            const region = regions.find(item => regionId(item) === String(id));
+            const label = region ? regionLabel(region) : "";
+            return cities.filter(city => String(value(city, "regionid")) === String(id) || value(city, "regionLabel") === label);
+        }
+
+        function renderOverview() {
+            activeRegionId = "";
+            mapEl.classList.remove("zoomed");
+            if (backButton) backButton.classList.remove("show");
+            const regionItems = buildRegionItems(regions);
+            const groups = regionItems.map(item => {
+                const region = item.region;
+                const index = item.index;
+                const id = regionId(region);
+                const label = escapeHtml(regionLabel(region));
+                const count = regionCities(id).length;
+                const layout = item.layout;
+                return `
+                    <g class="hub-map-region" tabindex="0" role="button" data-region-id="${escapeHtml(id)}" aria-label="${label}">
+                        <path d="${layout.path}" fill="${regionFill(index)}" stroke="#fff" stroke-width="5"></path>
+                        <text x="${layout.label.x}" y="${layout.label.y}" text-anchor="middle" fill="#17324a">${label}</text>
+                        <text x="${layout.label.x}" y="${layout.label.y + 28}" text-anchor="middle" class="city-count-label">${count} 城市</text>
+                    </g>`;
+            }).join("");
+            mapEl.innerHTML = `
+                <svg viewBox="0 0 640 420" role="img" aria-label="城市枢纽总览">
+                    ${mapMask("cityMapClip")}
+                    <g clip-path="url(#cityMapClip)">
+                        ${groups}
+                    </g>
+                </svg>`;
+            attachRegionEvents();
+            renderOverviewDetail();
+        }
+
+        function renderZoom(id) {
+            activeRegionId = String(id);
+            const regionIndex = Math.max(0, regions.findIndex(region => regionId(region) === activeRegionId));
+            const region = regions[regionIndex] || {};
+            const label = escapeHtml(regionLabel(region));
+            const list = regionCities(activeRegionId);
+            const selectedLayout = (buildRegionItems(regions).find(item => regionId(item.region) === activeRegionId) || {}).layout || layoutFor(region, regionIndex, regions.length);
+            const focusLayout = fitLayout(selectedLayout, { x: 104, y: 62, width: 432, height: 300 });
+            const focusPath = focusLayout.path;
+            const titlePoint = interiorPoint(focusLayout.label, focusLayout.points, focusLayout.bounds, 46);
+            const titleSize = Math.max(20, Math.min(28, focusLayout.bounds.width / Math.max(regionLabel(region).length, 4) * 0.52));
+            const cityPointList = cityInteriorPoints(list.length, focusLayout.points, focusLayout.bounds, titlePoint);
+            const emptyPoint = interiorPoint({ x: titlePoint.x, y: titlePoint.y + 82 }, focusLayout.points, focusLayout.bounds, 46);
+            mapEl.classList.add("zoomed");
+            if (backButton) backButton.classList.add("show");
+            if (regionSelect && !regionSelect.disabled) {
+                regionSelect.value = activeRegionId;
+                regionSelect.dispatchEvent(new Event("change", { bubbles: true }));
+            }
+            const pins = list.map((city, index) => {
+                const point = cityPointList[index];
+                const name = escapeHtml(value(city, "name") || "未命名城市");
+                return `
+                    <g class="city-pin" tabindex="0" role="button" aria-label="${name}">
+                        <circle cx="${point.x}" cy="${point.y}" r="12"></circle>
+                        <path d="M${point.x - 5} ${point.y - 1} L${point.x} ${point.y + 5} L${point.x + 7} ${point.y - 7}"></path>
+                        <text x="${point.x}" y="${point.y + 34}" text-anchor="middle">${name}</text>
+                    </g>`;
+            }).join("");
+            mapEl.innerHTML = `
+                <button type="button" class="map-stage-back" data-map-back>返回总览</button>
+                <svg viewBox="0 0 640 420" role="img" aria-label="${label}城市地图">
+                    <path class="city-focus-shape" fill="${regionFill(regionIndex)}" stroke="#fff" stroke-width="5"
+                          d="${focusPath}"></path>
+                    <text x="${titlePoint.x.toFixed(1)}" y="${titlePoint.y.toFixed(1)}" text-anchor="middle" class="city-focus-title" style="font-size:${titleSize.toFixed(1)}px">${label}</text>
+                    ${pins || `<text x="${emptyPoint.x.toFixed(1)}" y="${emptyPoint.y.toFixed(1)}" text-anchor="middle" class="city-empty-label">该区域暂无城市</text>`}
+                </svg>`;
+            mapEl.querySelector("[data-map-back]").addEventListener("click", renderOverview);
+            renderZoomDetail(region, list);
+        }
+
+        function attachRegionEvents() {
+            mapEl.querySelectorAll(".hub-map-region").forEach(region => {
+                const id = region.dataset.regionId;
+                region.addEventListener("click", () => renderZoom(id));
+                region.addEventListener("keydown", event => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        renderZoom(id);
+                    }
+                });
+            });
+        }
+
+        function renderOverviewDetail() {
+            const total = cities.length;
+            detailEl.innerHTML = `
+                <div class="hub-detail-kicker">城市总览</div>
+                <h3>全部枢纽区域</h3>
+                <dl>
+                    <div><dt>枢纽数量</dt><dd>${regions.length}</dd></div>
+                    <div><dt>城市数量</dt><dd>${total}</dd></div>
+                </dl>
+                <div class="city-chip-list">
+                    ${regions.map(region => {
+                        const id = regionId(region);
+                        return `<button type="button" data-region-id="${escapeHtml(id)}">${escapeHtml(regionLabel(region))}<span>${regionCities(id).length}</span></button>`;
+                    }).join("")}
+                </div>`;
+            detailEl.querySelectorAll("button[data-region-id]").forEach(button => {
+                button.addEventListener("click", () => renderZoom(button.dataset.regionId));
+            });
+        }
+
+        function renderZoomDetail(region, list) {
+            detailEl.innerHTML = `
+                <div class="hub-detail-kicker">区域城市</div>
+                <h3>${escapeHtml(regionLabel(region))}</h3>
+                <dl>
+                    <div><dt>城市数量</dt><dd>${list.length}</dd></div>
+                    <div><dt>新增城市默认区域</dt><dd>${escapeHtml(regionLabel(region))}</dd></div>
+                </dl>
+                <div class="city-list">
+                    ${list.map(city => `<span><i></i>${escapeHtml(value(city, "name") || "未命名城市")}</span>`).join("") || "<span>暂无城市</span>"}
+                </div>`;
+        }
+
+        function regionFill(index) {
+            return ["#d6e7f2", "#d9eadf", "#f3e1ba", "#ead3cf"][index % 4];
+        }
+
+        if (regions.length) {
+            renderOverview();
+        } else {
+            mapEl.innerHTML = '<div class="hub-map-empty">暂无枢纽区域数据</div>';
+            detailEl.innerHTML = '<div class="hub-detail-kicker">城市总览</div><h3>暂无区域</h3>';
+        }
+        if (backButton) {
+            backButton.addEventListener("click", renderOverview);
+        }
+    })();
+</script>
 </body>
 </html>

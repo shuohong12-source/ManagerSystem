@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run SmartLogisticsApplication",
+      "request": "launch",
+      "mainClass": "com.example.logistics.SmartLogisticsApplication",
+      "projectName": "smart-logistics",
+      "env": {
+        "OPENAI_API_KEY": "sk-67f6ffce004042edb105e4c0d57b68bb",
+        "OPENAI_BASE_URL": "https://api.deepseek.com",
+        "OPENAI_MODEL": "deepseek-v4-flash"
+      }
+    }
+  ]
+}

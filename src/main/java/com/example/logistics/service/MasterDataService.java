@@ -4,6 +4,7 @@ import com.example.logistics.mapper.MasterDataMapper;
 import com.example.logistics.model.MasterDefinition;
 import com.example.logistics.model.MasterField;
 import com.example.logistics.model.OptionItem;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -17,9 +18,12 @@ import java.util.StringJoiner;
 @Service
 public class MasterDataService {
     private final MasterDataMapper masterDataMapper;
+    private final JdbcTemplate jdbcTemplate;
     private final Map<String, MasterDefinition> definitions = new LinkedHashMap<>();
-    public MasterDataService(MasterDataMapper masterDataMapper) {
+    public MasterDataService(MasterDataMapper masterDataMapper, JdbcTemplate jdbcTemplate) {
         this.masterDataMapper = masterDataMapper;
+        this.jdbcTemplate = jdbcTemplate;
+        ensureGoodsImageColumn();
         definitions.put("regions", new MasterDefinition("regions", "枢纽区域", "hub_region",
                 List.of("regionid"),
                 List.of(MasterField.text("name", "区域名称", true),
@@ -35,7 +39,8 @@ public class MasterDataService {
                         MasterField.text("category", "类目", true),
                         MasterField.text("brand", "品牌", false),
                         MasterField.money("declared_price", "申报单价", true),
-                        MasterField.text("remark", "备注", false))));
+                        MasterField.text("remark", "备注", false),
+                        MasterField.text("image_url", "商品图片地址", false))));
         definitions.put("suppliers", new MasterDefinition("suppliers", "供应商", "supplier",
                 List.of("suppid"),
                 List.of(MasterField.text("name", "供应商名称", true),
@@ -120,11 +125,17 @@ public class MasterDataService {
                 .orElse(rawValue.toString());
     }
     private void insert(MasterDefinition definition, Map<String, String> form) {
+        if ("goods".equals(definition.type())) {
+            ensureGoodsImageColumn();
+        }
         List<String> columns = definition.fields().stream().map(MasterField::name).toList();
         List<Object> values = columns.stream().map(c -> valueFor(definition, c, form.get(c))).toList();
         masterDataMapper.insert(definition.tableName(), columns, values);
     }
     private void update(MasterDefinition definition, String editId, Map<String, String> form) {
+        if ("goods".equals(definition.type())) {
+            ensureGoodsImageColumn();
+        }
         List<String> columns = definition.fields().stream()
                 .map(MasterField::name)
                 .filter(c -> !definition.idColumns().contains(c))
@@ -169,6 +180,22 @@ public class MasterDataService {
         result.put("column", column);
         result.put("value", value);
         return result;
+    }
+    private void ensureGoodsImageColumn() {
+        try {
+            Integer count = jdbcTemplate.queryForObject("""
+                    SELECT COUNT(*)
+                    FROM information_schema.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE()
+                      AND TABLE_NAME = 'goods'
+                      AND COLUMN_NAME = 'image_url'
+                    """, Integer.class);
+            if (count != null && count == 0) {
+                jdbcTemplate.update("ALTER TABLE goods ADD COLUMN image_url VARCHAR(500) NULL AFTER remark");
+            }
+        } catch (Exception ignored) {
+            // The schema scripts also define this column; if the database is not reachable yet, startup should continue.
+        }
     }
     private record IdParts(List<Map<String, Object>> conditions) {
     }
